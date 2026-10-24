@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:8000/api/oauth/google/callback"
     token_encryption_key: str | None = None  # Fernet key; required to store provider tokens
+    frontend_url: str = "http://localhost:3000"  # where the OAuth callback sends the browser
     sync_enabled: bool = True  # kill switch: false disables every sync/rollback endpoint
 
 

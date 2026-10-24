@@ -69,7 +69,7 @@ def create_app(
         providers["google"] = GoogleCalendarProvider(
             http, oauth.access_token, lambda: oauth.connected
         )
-    app.include_router(build_oauth_router(oauth, providers))
+    app.include_router(build_oauth_router(oauth, providers, settings.frontend_url))
     app.include_router(build_router(store, providers, settings.sync_enabled))
 
     @app.get("/health")

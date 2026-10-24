@@ -28,6 +28,7 @@ from app.providers.base import (
     TransientError,
 )
 from app.providers.google import GoogleCalendarProvider, from_google, to_google
+from app.providers.mock import MockProvider
 from app.providers.oauth import GoogleOAuth, OAuthError, RedactingFilter, TokenVault, redact
 from tests.test_m3_helpers import ready_events
 
@@ -328,39 +329,96 @@ def test_redaction_of_tokens_in_text_and_logs(caplog):
 
 
 # ---------------- HTTP surface ----------------
-def test_api_oauth_endpoints_unconfigured_and_configured():
-    c = TestClient(create_app(Store(":memory:"), {}))
-    assert c.get("/api/oauth/google/start").status_code == 503
-    assert (
-        c.get("/api/oauth/google/callback", params={"code": "c", "state": "s"}).status_code == 503
-    )
-
-    store = Store(":memory:")
+def _configured_client(handler=token_ok):
+    """App wired with Google credentials and a mocked Google transport."""
     import app.api.main as m
 
+    store = Store(":memory:")
     s = settings()
     orig = m.get_settings
     m.get_settings = lambda: s  # type: ignore[assignment]
     try:
         client = TestClient(
-            create_app(store, {}, httpx.Client(transport=httpx.MockTransport(token_ok)))
+            create_app(store, {}, httpx.Client(transport=httpx.MockTransport(handler))),
+            follow_redirects=False,
         )
     finally:
         m.get_settings = orig
+    return client, store
+
+
+def test_api_oauth_unconfigured():
+    c = TestClient(create_app(Store(":memory:"), {}), follow_redirects=False)
+    assert c.get("/api/oauth/google/start").status_code == 503
+    r = c.get("/api/oauth/google/callback", params={"code": "c", "state": "s"})
+    assert r.status_code == 302 and "google=error" in r.headers["location"]
+    assert "reason=not_configured" in r.headers["location"]
+    assert c.get("/api/providers/google/calendars").status_code == 503
+
+
+def test_oauth_flow_redirects_back_to_app_without_leaking_anything():
+    client, _ = _configured_client()
     url = client.get("/api/oauth/google/start").json()["auth_url"]
     assert url.startswith("https://accounts.google.com/")
-    assert (
-        client.get(
-            "/api/oauth/google/callback", params={"code": "c", "state": "forged"}
-        ).status_code
-        == 400
-    )
+    bad = client.get("/api/oauth/google/callback", params={"code": "c", "state": "forged"})
+    assert bad.status_code == 302 and "reason=oauth_failed" in bad.headers["location"]
     state = parse_qs(urlparse(url).query)["state"][0]
-    r = client.get("/api/oauth/google/callback", params={"code": "c", "state": state})
-    assert r.status_code == 200 and r.json() == {"connected": True}
-    assert "NEWTOKEN" not in r.text
+    ok = client.get("/api/oauth/google/callback", params={"code": "SECRETCODE", "state": state})
+    assert ok.status_code == 302
+    loc = ok.headers["location"]
+    assert loc.startswith("http://localhost:3000/connect?") and "google=connected" in loc
+    for secret in ("SECRETCODE", "NEWTOKEN", "REFRESH", state):
+        assert secret not in loc
     prov = {p["id"]: p for p in client.get("/api/providers").json()}
     assert prov["google"]["available"] is True
+
+
+def test_user_cancelling_at_google_is_reported_as_denied():
+    client, _ = _configured_client()
+    r = client.get("/api/oauth/google/callback", params={"error": "access_denied"})
+    assert r.status_code == 302 and "reason=denied" in r.headers["location"]
+
+
+def test_disconnect_forgets_tokens_and_provider_becomes_unavailable():
+    client, store = _configured_client()
+    state = parse_qs(urlparse(client.get("/api/oauth/google/start").json()["auth_url"]).query)[
+        "state"
+    ][0]
+    client.get("/api/oauth/google/callback", params={"code": "c", "state": state})
+    assert store.load_token_blob("google") is not None
+    assert client.post("/api/oauth/google/disconnect").json() == {"connected": False}
+    assert store.load_token_blob("google") is None
+    prov = {p["id"]: p for p in client.get("/api/providers").json()}
+    assert prov["google"]["available"] is False and prov["google"]["reason"] == "not connected"
+    assert client.get("/api/providers/google/calendars").status_code == 409
+
+
+def test_calendar_listing_for_connected_google_and_for_demo():
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path.endswith("/token"):
+            return token_ok(req)
+        assert req.headers["authorization"].startswith("Bearer ")
+        return httpx.Response(
+            200,
+            json={
+                "items": [
+                    {"id": "work@x", "summary": "Work"},
+                    {"id": "test@x", "summary": "SchoolSync TEST"},
+                ]
+            },
+        )
+
+    client, _ = _configured_client(handler)
+    state = parse_qs(urlparse(client.get("/api/oauth/google/start").json()["auth_url"]).query)[
+        "state"
+    ][0]
+    client.get("/api/oauth/google/callback", params={"code": "c", "state": state})
+    assert client.get("/api/providers/google/calendars").json() == [
+        {"id": "work@x", "name": "Work"},
+        {"id": "test@x", "name": "SchoolSync TEST"},
+    ]
+    demo = TestClient(create_app(Store(":memory:"), {"mock": MockProvider()}))
+    assert demo.get("/api/providers/mock/calendars").json()[0]["id"] == "demo"
 
 
 def test_global_log_redaction_covers_any_logger(caplog):

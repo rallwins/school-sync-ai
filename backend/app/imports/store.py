@@ -156,6 +156,10 @@ class Store:
         ).fetchone()
         return str(r["blob"]) if r else None
 
+    def delete_token_blob(self, provider: str) -> None:
+        self.db.execute("DELETE FROM oauth_tokens WHERE provider=?", (provider,))
+        self.db.commit()
+
     def audit(self, action: str, detail: str) -> None:
         self.db.execute("INSERT INTO audit VALUES (?,?,?)", (_now(), action, detail))
         self.db.commit()

@@ -52,6 +52,7 @@ export async function extractCalendar(
 
 import type {
   CalendarEvent,
+  CalendarOption,
   ImportMeta,
   ImportRecordResult,
   ProviderInfo,
@@ -144,3 +145,9 @@ export const rollbackBatch = (batchId: string) =>
     `/api/sync/rollback/${batchId}`,
     post({ confirm: true }),
   );
+
+export const oauthStart = () => call<{ auth_url: string }>("/api/oauth/google/start");
+export const oauthDisconnect = () =>
+  call<{ connected: boolean }>("/api/oauth/google/disconnect", { method: "POST" });
+export const listCalendars = (providerId: string) =>
+  call<CalendarOption[]>(`/api/providers/${encodeURIComponent(providerId)}/calendars`);

@@ -19,7 +19,7 @@ export default function ImportPage() {
     try {
       setZones(Intl.supportedValuesOf("timeZone"));
     } catch {
-      setZones(["America/Chicago", "America/New_York", "America/Los_Angeles", "UTC"]);
+      setZones(["Asia/Kolkata", "America/Chicago", "America/New_York", "America/Los_Angeles", "UTC"]);
     }
   }, []);
 
@@ -84,7 +84,7 @@ export default function ImportPage() {
             </label>
             <label className="block text-sm">
               Timezone
-              <input name="tz" required list="zones" defaultValue="America/Chicago" className={input} />
+              <input name="tz" required list="zones" defaultValue="Asia/Kolkata" className={input} />
               <datalist id="zones">
                 {zones.map((z) => (
                   <option key={z} value={z} />

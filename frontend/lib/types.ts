@@ -111,3 +111,13 @@ export interface ImportRecordResult {
   already_imported: boolean;
   diff: ImportDiff | null;
 }
+
+export interface Destination {
+  provider: string; // "mock" | "google"
+  calendarId: string;
+  calendarName: string;
+}
+export interface CalendarOption {
+  id: string;
+  name: string;
+}

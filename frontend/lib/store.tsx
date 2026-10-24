@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { bulkAllDayEligible, confirmBlockers } from "./readiness";
 import type {
   CalendarEvent,
+  Destination,
   EditRecord,
   ExtractionResult,
   ImportMeta,
@@ -16,6 +17,7 @@ interface State {
   edits: EditRecord[];
   legendConfirmed: boolean;
   importRec: ImportRecordResult | null;
+  destination: Destination | null;
 }
 const EMPTY: State = {
   meta: null,
@@ -24,6 +26,7 @@ const EMPTY: State = {
   edits: [],
   legendConfirmed: false,
   importRec: null,
+  destination: null,
 };
 const KEY = "schoolsync.session.v1";
 
@@ -35,6 +38,7 @@ interface Ctx extends State {
   bulkAllDay: () => number;
   setLegendConfirmed: (v: boolean) => void;
   setImportRec: (r: ImportRecordResult | null) => void;
+  setDestination: (d: Destination | null) => void;
   clear: () => void;
 }
 const StoreCtx = createContext<Ctx | null>(null);
@@ -63,7 +67,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [state, hydrated]);
 
   const load = useCallback((meta: ImportMeta, result: ExtractionResult) => {
-    setState({ ...EMPTY, meta, result, events: result.events });
+    // a chosen destination outlives a new import; everything else is reset
+    setState((s) => ({ ...EMPTY, destination: s.destination, meta, result, events: result.events }));
   }, []);
 
   const editEvent = useCallback((id: string, patch: Partial<CalendarEvent>) => {
@@ -131,11 +136,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     (r: ImportRecordResult | null) => setState((s) => ({ ...s, importRec: r })),
     [],
   );
-  const clear = useCallback(() => setState(EMPTY), []);
+  const setDestination = useCallback(
+    (d: Destination | null) => setState((s) => ({ ...s, destination: d })),
+    [],
+  );
+  const clear = useCallback(() => setState((s) => ({ ...EMPTY, destination: s.destination })), []);
 
   const value = useMemo<Ctx>(
-    () => ({ ...state, hydrated, load, editEvent, confirmEvent, bulkAllDay, setLegendConfirmed, setImportRec, clear }),
-    [state, hydrated, load, editEvent, confirmEvent, bulkAllDay, setLegendConfirmed, setImportRec, clear],
+    () => ({ ...state, hydrated, load, editEvent, confirmEvent, bulkAllDay, setLegendConfirmed, setImportRec, setDestination, clear }),
+    [state, hydrated, load, editEvent, confirmEvent, bulkAllDay, setLegendConfirmed, setImportRec, setDestination, clear],
   );
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }

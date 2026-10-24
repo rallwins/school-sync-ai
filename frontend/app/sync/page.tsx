@@ -22,7 +22,7 @@ const ACTION_TEXT: Record<string, string> = {
 };
 
 export default function SyncPage() {
-  const { result, events, meta, legendConfirmed, hydrated, importRec } = useStore();
+  const { result, events, meta, legendConfirmed, hydrated, importRec, destination } = useStore();
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [dayStart, setDayStart] = useState("");
   const [preview, setPreview] = useState<SyncPreview | null>(null);
@@ -49,7 +49,14 @@ export default function SyncPage() {
   const blocked = events.filter((e) => readiness(e) !== "ready");
   const canAct = legendConfirmed && ready.length > 0;
   const demo = providers.find((p) => p.id === "mock");
-  const body = () => ({ provider: "mock", calendar_id: "demo", events, day_start: dayStart || null });
+  // No explicit choice -> the harmless in-memory demo calendar. A real calendar is never a default.
+  const dest =
+    destination ??
+    (demo?.available ? { provider: "mock", calendarId: "demo", calendarName: "Demo calendar (in-memory)" } : null);
+  const destProvider = providers.find((p) => p.id === dest?.provider);
+  const isReal = !!dest && dest.provider !== "mock";
+  const destLabel = dest ? `${isReal ? "your REAL Google calendar" : "the demo calendar"} “${dest.calendarName}”` : "";
+  const body = () => ({ provider: dest?.provider ?? "mock", calendar_id: dest?.calendarId ?? "demo", events, day_start: dayStart || null });
 
   async function run<T>(fn: () => Promise<T>, done: (v: T) => void) {
     setBusy(true);
@@ -155,19 +162,24 @@ export default function SyncPage() {
         <ul className="mt-2 space-y-1">
           {providers.filter((p) => p.id !== "file").map((p) => (
             <li key={p.id} className={p.available ? "" : "text-muted"}>
-              {p.label}: {p.available ? "available (nothing leaves this server)" : `unavailable (${p.reason})`}
+              {p.label}: {p.available ? "available" : `unavailable (${p.reason})`}
             </li>
           ))}
         </ul>
+        <p className="mt-2">
+          Destination:{" "}
+          <strong>{dest ? dest.calendarName : "none selected"}</strong>
+          {isReal && <span className="text-warn"> (writes to a real Google Calendar after you confirm)</span>}{" "}
+          <Link className="text-accent underline" href="/connect">Change</Link>
+        </p>
         <p className="mt-1 text-xs text-muted">
-          Google and Microsoft adapters are not implemented. The demo calendar is in memory and resets
-          when the server restarts.
+          The demo calendar is in memory and resets when the server restarts. Microsoft is not implemented.
         </p>
 
         <div className="mt-3 flex gap-2">
-          <button disabled={!canAct || !demo?.available || busy} className={btn}
+          <button disabled={!canAct || !dest || !destProvider?.available || busy} className={btn}
             onClick={() => run(() => previewSync(body()), (p) => { setPreview(p); setReport(null); setConfirmed(false); setRolled(null); })}>
-            Preview sync to demo calendar
+            Preview sync to {dest ? dest.calendarName : "a calendar"}
           </button>
         </div>
 
@@ -195,7 +207,7 @@ export default function SyncPage() {
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
                   I confirm: apply {preview.counts.create} create and {preview.counts.update} update
-                  action(s) to the demo calendar. Conflicts and removals are not applied.
+                  action(s) to {destLabel}. Conflicts and removals are not applied.
                 </label>
                 <button disabled={!confirmed || busy} className={primary}
                   onClick={() => run(() => executeSync(body(), preview.plan_token), setReport)}>
@@ -218,7 +230,7 @@ export default function SyncPage() {
               ))}
             </ul>
             <button disabled={busy || rolled !== null} className={btn}
-              onClick={() => { if (window.confirm("Remove only the events created in this batch from the demo calendar?"))
+              onClick={() => { if (window.confirm(`Remove only the events created in this batch from ${destLabel}?`))
                 run(() => rollbackBatch(report.batch_id), (r) => setRolled(`${r.results.filter((x) => x.status === "deleted").length} event(s) removed`)); }}>
               Roll back this batch
             </button>

@@ -122,6 +122,11 @@ class GoogleOAuth:
     def connected(self) -> bool:
         return self.vault.load("google") is not None
 
+    def disconnect(self) -> None:
+        """Forget the stored tokens. (Revoking at Google is left to the user's account page.)"""
+        self.store.delete_token_blob("google")
+        self.store.audit("oauth.disconnected", "google")
+
     def start(self) -> str:
         if not self.configured:
             raise ProviderNotConfigured(
