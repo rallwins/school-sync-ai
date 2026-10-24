@@ -1,7 +1,10 @@
 flowchart TD
-  L[Layout: words + vector fills per page] --> SW[Find swatches: small square fills with a label to the right]
+  L[Layout: words + vector fills per page] --> SW[Find swatches: text-free fills, an aligned group of 3+ colours, label to the right]
   SW --> LG[Legend entries: label, RGB, page region]
-  L --> GR[Find 'Month YYYY' header + 7 weekday labels]
+  L --> MODE{Page has a DATE / IMPORTANT DATES list?}
+  MODE -->|no, cell-text grid| GR[Find 'Month YYYY' header + 7 weekday labels]
+  MODE -->|yes, list-style| LS[Dates from printed day numbers per month grid. Colour sampled under each number. Events parsed from the side list rows, e.g. Sep 8-12 or Sep 18 and 19]
+  LS --> BL
   GR --> CE[Cell rectangles: modal size filled rects]
   CE --> DT[Date = week start + row/col; check printed day number]
   DT -->|mismatch| WARN[Report grid_misaligned; skip cell; never shift date]

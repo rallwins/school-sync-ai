@@ -26,7 +26,7 @@ sequenceDiagram
   A-->>W: plan (create/update/skip/conflict/propose_remove) + plan_token
   U->>W: tick confirmation, Confirm and sync
   W->>A: POST /api/sync/execute (confirm=true, plan_token)
-  A->>A: recompute plan; token must match, else 409
+  A->>A: recompute plan - token must match, else 409
   loop each create/update
     A->>G: find by owner id, then create/update (bounded retries)
     A->>S: upsert mapping (stable id -> provider id, batch)

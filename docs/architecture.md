@@ -19,14 +19,25 @@ pipeline stages. Status below reflects the repository today.
 Design rule: no LLM does date arithmetic, identity, duplicate verdicts, OAuth or sync
 (ADR 0001); the shipped extractor uses no LLM.
 
-## Diagrams (Mermaid source in `docs/diagrams/`)
-- `c4-container.mmd` container view (labels show implementation status)
-- `sequence-upload-to-sync.mmd` upload -> extraction -> review -> dedup -> sync
-- `color-legend-flow.mmd` grid, legend and colour decisions
-- `reconciliation-flow.mmd` duplicate-safe planning and execution
-- `trust-boundaries.mmd` OAuth / provider trust boundaries
+## Diagrams
+Each diagram is a Mermaid source file (`.mmd`, the source of truth) with a rendered PNG beside it.
+All five were validated with the real Mermaid parser (v11.4.1, headless Chromium) and viewed.
+GitHub does not render standalone `.mmd` files, so the PNGs are shown here.
 
-Rendered images are not committed; paste the `.mmd` into any Mermaid renderer.
+**Container view** ([source](diagrams/c4-container.mmd))
+![Container view](diagrams/c4-container.png)
+
+**Upload to sync** ([source](diagrams/sequence-upload-to-sync.mmd))
+![Sequence: upload to sync](diagrams/sequence-upload-to-sync.png)
+
+**Grid, legend and colour decisions** ([source](diagrams/color-legend-flow.mmd))
+![Colour and legend flow](diagrams/color-legend-flow.png)
+
+**Duplicate-safe reconciliation** ([source](diagrams/reconciliation-flow.mmd))
+![Reconciliation flow](diagrams/reconciliation-flow.png)
+
+**Trust boundaries** ([source](diagrams/trust-boundaries.mmd))
+![Trust boundaries](diagrams/trust-boundaries.png)
 
 ## ADRs
 `docs/adr/0001` .. `0005` (validation vs LLM, schema/time semantics, duplicates and ownership,
