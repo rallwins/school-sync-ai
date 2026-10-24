@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { confirmBlockers, readiness, summarize } from "./readiness";
+import { bulkAllDayEligible, confirmBlockers, readiness, summarize } from "./readiness";
 import type { CalendarEvent } from "./types";
 
 const base: CalendarEvent = {
@@ -47,5 +47,31 @@ describe("readiness", () => {
   it("summarize counts", () => {
     const bad = { ...base, validation_status: "needs_review" as const };
     expect(summarize([base, bad])).toEqual({ total: 2, ready: 1, needsAttention: 1 });
+  });
+});
+
+describe("bulkAllDayEligible", () => {
+  const unknown = {
+    ...base,
+    duration_kind: "unknown" as const,
+    is_all_day: false,
+    validation_status: "needs_review" as const,
+    warnings: [{ code: "duration_unknown", message: "m", critical: true }],
+  };
+  it("accepts a titled event whose only gap is duration", () => {
+    expect(bulkAllDayEligible(unknown)).toBe(true);
+  });
+  it("rejects ambiguous, conflicting, untitled, grid-mismatch and already-confirmed events", () => {
+    expect(bulkAllDayEligible({ ...unknown, validation_status: "ambiguous" })).toBe(false);
+    const conflict = { ...unknown, warnings: [{ code: "legend_text_conflict", message: "m", critical: true }] };
+    expect(bulkAllDayEligible(conflict)).toBe(false);
+    expect(bulkAllDayEligible({ ...unknown, event_title: "(untitled - colour only)" })).toBe(false);
+    const nogrid = { ...unknown, warnings: [...unknown.warnings, { code: "date_not_in_grid", message: "m", critical: true }] };
+    expect(bulkAllDayEligible(nogrid)).toBe(false);
+    expect(bulkAllDayEligible({ ...unknown, user_confirmed: true })).toBe(false);
+  });
+  it("rejects events that already have a duration", () => {
+    expect(bulkAllDayEligible(base)).toBe(false);
+    expect(bulkAllDayEligible({ ...base, duration_kind: "half_day" as const })).toBe(false);
   });
 });

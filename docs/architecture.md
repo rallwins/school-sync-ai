@@ -8,7 +8,7 @@ pipeline stages. Status below reflects the repository today.
 | `ingestion` | Untrusted-upload validation, SHA-256 | Implemented, tested |
 | `pdf` | PyMuPDF words with coordinates and vector fills | Implemented, tested |
 | `ocr` | OCR adapter | **Not implemented** (scanned pages are flagged and skipped) |
-| `grid_detection` | Month grid, cell -> date, printed-day cross-check | Implemented (vector-fill grids only) |
+| `grid_detection` | Cell-text grids (`grid.py`) and list-style calendars with a side event list (`list_layout.py`); printed-day cross-checks | Implemented (vector PDFs only) |
 | `legend`, `color_mapping` | Legend swatches, CIE76 Delta E matching | Implemented |
 | `extraction`, `validation` | Events, half-day/all-day/timed rules, readiness | Implemented |
 | `deduplication` | Fingerprint, stable id, layers A/B/C, import diff | Implemented |

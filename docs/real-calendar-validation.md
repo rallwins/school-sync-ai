@@ -1,50 +1,58 @@
 # Validation against a real school calendar
 
-Run 2026-10-24, **locally only** (the PDF is kept in the git-ignored `data/private/`, never
-uploaded to the public demo, never committed). The document is a 9-page family calendar PDF:
-cover, 7 month-pair pages, closing photo. It has a text layer and vector colouring.
+Run 2026-10-24, **locally only**. The PDF stays in the git-ignored `data/private/`; it was never
+uploaded to the public demo and is not in this repository. It is a 9-page family calendar:
+cover, 7 pages of month pairs (May 2025 to Jun 2026), closing photo. Text layer plus vector colour.
 
-## Result: 0 events extracted. The layout is not supported.
+## Outcome
+| | First run | After this work |
+|---|---|---|
+| Events extracted | **0** (all pages skipped) | **113** |
+| Legend | 40+ nonsense entries | 4 correct entries with correct colours |
 
-All 9 pages were skipped with a warning and nothing was written. That is the intended safe
-failure, but it is a real failure: the product does not yet work on this calendar.
+### How the 113 was checked
+I counted the dated rows in the source document page by page (both the "Important Dates" list and
+the "Public Holidays" column) and compared with the extractor's per-page output:
 
-## What the real file looks like (and why it does not fit the current extractor)
-| Real calendar | Extractor assumption |
-|---|---|
-| Two month grids per page | One grid per page |
-| Date "cells" are small and drawn as **merged colour strips** (one rect spans several days) | Each cell is its own filled rect |
-| Month label is **rotated** ("May" / "2025" stacked vertically) | Horizontal "Month YYYY" |
-| Weekday header is abbreviated ("Mon Tu We Th Fr Sa Su") | Full or 3-letter names |
-| Events are in a **separate list** to the right: `Jun 2-13  Professional Development...`, `Jun 27 | 28  ...` | Event text printed inside the date cell |
-| Audience (EY / PY) shown as checkbox columns; public holidays in their own column | Not modelled |
-| Legend only on the **last page**, wide swatches with centred labels | Legend on each page, small swatches |
-| One colour ("Public Holidays") also tints every weekend and break day | Colour identifies the event |
+| Page | 2 | 3 | 4 | 5 | 6 | 7 | 8 | Total |
+|---|---|---|---|---|---|---|---|---|
+| Source rows | 11 | 24 | 18 | 14 | 19 | 22 | 5 | 113 |
+| Extracted | 11 | 24 | 18 | 14 | 19 | 22 | 5 | 113 |
 
-## Bugs this found, now fixed (111 tests pass)
-1. **False legend.** Date cells and 6x6 checkboxes were read as legend swatches, producing 40+
-   nonsense legend entries whose labels were rows of list text. Swatches must now contain no text, be
-   at least 8 pt, form an aligned group of 3+ distinct colours, and carry a short alphabetic label
-   that does not look like a dated list row.
-2. **Truncated legend labels** for centred labels ("Public" instead of "Public Holidays").
-3. **Overflow-left labels** (a centred label wider than its strip) lost their first word.
-4. Weekday abbreviations and rotated month labels are now recognised.
-5. Multi-month pages now say so ("2 month grids on one page") instead of "no Month YYYY header".
+Ranges (`Jun 2-13`), pairs (`Jun 27 | 28`), wrapped holiday titles and the Dec 2025 / Jan 2026
+boundary came out right in the samples I compared. **Limits of this check:** counts match and I
+compared a sample of dates and titles by eye; I did not diff all 113 rows field by field, and there
+is no automated test against this file (it is private). Synthetic fixture C covers the same structure.
 
-After the fixes the legend is read correctly from this file: Student Days, Public Holidays,
-School Opening & Reopening Days, Important Days, each with the right colour. Regression tests
-recreate each broken structure with synthetic content (`tests/test_real_world_regressions.py`).
+### What the app does with them
+- 33 are all-day (30 inferred from the "Public Holidays" legend colour, with a visible
+  "inferred from colour only" warning; a few from explicit text such as "Holiday" or "Fall Break").
+- 80 have **no stated duration** (assemblies, trips, workshops) and are `needs_review`. They can be
+  bulk-marked all-day by the user in one explicit, confirmed action; ambiguous or conflicting events
+  are excluded from that action.
+- 1 is `ambiguous`: one date is painted pure orange (255,153,0), which matches no legend colour
+  (nearest is dE 18, tolerance 12), so it is flagged rather than guessed.
+- Audience (EY / PY) is **not read**; the app says so. Several titles keep a trailing `| EY & PY`.
+- The "Public Holidays" tint also colours weekends and breaks, so an event on a Saturday is
+  "inferred all-day" because of the weekend colour. Treat colour-only inferences accordingly.
 
-## What supporting this calendar would take (not built)
-1. Locate date cells from the printed day numbers and sample colour under each, instead of
-   relying on one rect per cell; handle two month blocks per page.
-2. Parse the right-hand list: date, range (`Jun 2-13`) and pair (`Jun 27 | 28`) forms, with the
-   year taken from the month block beside it, plus wrapped titles.
-3. Take category from the grid colour via the document-wide (last-page) legend, but not treat
-   "Public Holidays" tint as proof an event is a closure.
-4. Policy for events with no duration (most rows are single-day activities with no time).
-   Today these correctly come out `needs_review`; a bulk "treat as all-day" confirmation would be
-   needed to make review practical.
-5. Optional: EY/PY audience from the checkbox columns.
+## Bugs this validation found and fixed
+1. Date cells and 6x6 checkboxes were read as legend swatches (40+ bogus entries).
+2. Centred legend labels were truncated ("Public"), and labels overflowing leftwards lost a word.
+3. Plural wording ("Public **Holidays**") did not match the all-day keyword rules.
+4. A stray "EY"/"PY" word inside a row was taken for the column header, clipping titles and dropping
+   an entire page of events.
+5. A row whose date sat 4 pt below its first title line was split in two, leaving the title "Day".
+6. Weekday header detection counted labels per row, so a stray "Sa"/"Th" broke a page; it now
+   looks for a run of 7 consecutive weekday names.
+7. Rotated month labels, abbreviated weekdays and several month grids per page are now supported.
 
-The public demo (Vercel + Lambda) has **not** been redeployed with these fixes.
+## Still not handled
+Scanned/image-only pages, grids drawn only with stroked lines, icon or pattern legends, audience
+columns, and any layout that differs materially from the two structures tested (cell-text
+calendars and this list style).
+
+## Reproducing
+`python data/synthetic/generate_fixture_c.py` builds a fictional calendar with the same structure;
+`backend/tests/test_list_layout.py` asserts the results. To run your own file locally:
+put it under `data/private/` (ignored by git) and use the upload form against a local server.

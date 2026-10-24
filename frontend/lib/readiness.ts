@@ -55,3 +55,18 @@ export function durationLabel(e: CalendarEvent): string {
       return "Unknown";
   }
 }
+
+/**
+ * Events a person may bulk-mark as all-day: the ONLY thing missing is a stated duration.
+ * Excluded on purpose: ambiguous events, contradictions, untitled colour-only cells, and
+ * dates not found in their month grid. Those need individual attention.
+ */
+export function bulkAllDayEligible(e: CalendarEvent): boolean {
+  return (
+    e.duration_kind === "unknown" &&
+    !e.user_confirmed &&
+    !isPlaceholderTitle(e.event_title) &&
+    e.validation_status !== "ambiguous" &&
+    e.warnings.every((w) => !w.critical || w.code === "duration_unknown")
+  );
+}

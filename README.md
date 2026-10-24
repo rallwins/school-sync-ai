@@ -10,7 +10,7 @@ backend; see [infra/aws/README.md](infra/aws/README.md)). No real Google/Outlook
 | Capability | State |
 |---|---|
 | Upload validation (size, type, pages, malformed, encrypted) | Implemented, tested |
-| Vector-PDF grid/date detection, legend parsing, CIE76 colour matching | Implemented, tested on 1 synthetic PDF |
+| Vector-PDF grid/date detection, legend parsing, CIE76 colour matching | Implemented; tested on 3 synthetic PDFs (cell-text and list-style layouts) and 1 real calendar |
 | Full-day / half-day / timed rules (no assumed times) | Implemented, tested |
 | Review UI: legend, table, month calendar, filters, edit + confirm, history | Implemented, 1 Playwright e2e |
 | ICS export (date-valued all-day, exclusive DTEND, TZID, stable UIDs) | Implemented, parser-tested only |
@@ -23,7 +23,7 @@ backend; see [infra/aws/README.md](infra/aws/README.md)). No real Google/Outlook
 | OCR / scanned PDFs | Not implemented (flagged and skipped; Tesseract not installed) |
 | Stroked-line grids, icon/pattern legends | Not implemented |
 | Source-page crop preview, settings page, provider connection page | Not implemented |
-| **Real school calendar (list-style, 2 months/page)** | **0 events: layout unsupported** (legend now read correctly); see [docs/real-calendar-validation.md](docs/real-calendar-validation.md) |
+| Real school calendar (list-style, 2 months/page) | **113 events extracted from a real 9-page calendar** (row count matches the source page by page; sample of dates/titles checked by eye; file is private). 80 have no stated duration; bulk "treat as all-day" is an explicit user action. See [docs/real-calendar-validation.md](docs/real-calendar-validation.md) |
 | Backend Docker image | Built and smoke-tested locally (health, extract, import) |
 | `docker-compose.yml`, CI workflow | Written, never run |
 | Deployment: Vercel + Lambda Function URL (CloudFormation) | Deployed; full e2e flow passed against the live URL |
@@ -32,13 +32,13 @@ backend; see [infra/aws/README.md](infra/aws/README.md)). No real Google/Outlook
 
 ## Verified results (this machine)
 
-- Backend: 111 pytest tests pass; ruff and strict mypy clean.
-- Frontend: `tsc` clean, 5 Vitest tests, production build, and 1 Playwright test in Chromium against
+- Backend: 124 pytest tests pass; ruff and strict mypy clean.
+- Frontend: `tsc` clean, 8 Vitest tests, production build, and 2 Playwright tests in Chromium against
   the live backend: upload, resolve a time-less half day and a colour-only ambiguous event, confirm
   legend, download ICS, preview 8 creates, explicit confirm, report, second preview shows 8 skips.
-- Evaluation (`evaluation/run_eval.py`): precision/recall 1.0 on **2 synthetic PDFs, 13 labelled events** (second fixture: Monday-first,
-  leap year, drifted colours, text/legend conflict). Same author and drawing code, so this is a
-  regression baseline, not real-world accuracy. On a real calendar: 0 events (see above).
+- Evaluation (`evaluation/run_eval.py`): precision/recall 1.0 on **3 synthetic PDFs, 26 labelled events** (Sunday-first; Monday-first with leap
+  year, drifted colours and a text/legend conflict; list-style with two months per page). Same author,
+  so this is a regression baseline, not real-world accuracy. The only real calendar tried is the one above.
 
 ## Design decisions worth knowing
 

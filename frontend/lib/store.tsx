@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { confirmBlockers } from "./readiness";
+import { bulkAllDayEligible, confirmBlockers } from "./readiness";
 import type {
   CalendarEvent,
   EditRecord,
@@ -32,6 +32,7 @@ interface Ctx extends State {
   load: (meta: ImportMeta, result: ExtractionResult) => void;
   editEvent: (id: string, patch: Partial<CalendarEvent>) => void;
   confirmEvent: (id: string) => void;
+  bulkAllDay: () => number;
   setLegendConfirmed: (v: boolean) => void;
   setImportRec: (r: ImportRecordResult | null) => void;
   clear: () => void;
@@ -104,6 +105,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  // Explicit, user-triggered: marks every eligible unknown-duration event all-day AND confirmed,
+  // writing one history record per event. Returns how many were changed.
+  const bulkAllDay = useCallback(() => {
+    let n = 0;
+    setState((s) => {
+      const now = new Date().toISOString();
+      const rec: EditRecord[] = [];
+      const events = s.events.map((e) => {
+        if (!bulkAllDayEligible(e)) return e;
+        n += 1;
+        rec.push({ eventId: e.event_id_internal, field: "bulk_all_day", from: "unknown", to: "all_day", at: now });
+        return { ...e, duration_kind: "all_day" as const, is_all_day: true, start_time: null, end_time: null, user_confirmed: true };
+      });
+      return n === 0 ? s : { ...s, events, edits: [...s.edits, ...rec] };
+    });
+    return n;
+  }, []);
+
   const setLegendConfirmed = useCallback(
     (v: boolean) => setState((s) => ({ ...s, legendConfirmed: v })),
     [],
@@ -115,8 +134,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const clear = useCallback(() => setState(EMPTY), []);
 
   const value = useMemo<Ctx>(
-    () => ({ ...state, hydrated, load, editEvent, confirmEvent, setLegendConfirmed, setImportRec, clear }),
-    [state, hydrated, load, editEvent, confirmEvent, setLegendConfirmed, setImportRec, clear],
+    () => ({ ...state, hydrated, load, editEvent, confirmEvent, bulkAllDay, setLegendConfirmed, setImportRec, clear }),
+    [state, hydrated, load, editEvent, confirmEvent, bulkAllDay, setLegendConfirmed, setImportRec, clear],
   );
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }

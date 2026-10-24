@@ -5,11 +5,12 @@ import { EventDetail } from "@/components/EventDetail";
 import { EventTable } from "@/components/EventTable";
 import { LegendPanel } from "@/components/LegendPanel";
 import { MonthCalendar } from "@/components/MonthCalendar";
-import { readiness, summarize } from "@/lib/readiness";
+import { bulkAllDayEligible, readiness, summarize } from "@/lib/readiness";
 import { useStore } from "@/lib/store";
 
 export default function ReviewPage() {
-  const { result, events, hydrated, meta } = useStore();
+  const { result, events, hydrated, meta, bulkAllDay } = useStore();
+  const [bulkMsg, setBulkMsg] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "calendar">("table");
   const [cat, setCat] = useState("");
   const [kind, setKind] = useState("");
@@ -62,6 +63,29 @@ export default function ReviewPage() {
           <ul className="list-disc pl-5">{result.warnings.map((w) => <li key={w}>{w}</li>)}</ul>
         </div>
       )}
+
+      {events.filter(bulkAllDayEligible).length > 0 && (
+        <section aria-labelledby="h-bulk" className="rounded border border-line bg-surface p-4 text-sm">
+          <h2 id="h-bulk" className="font-semibold">No stated duration</h2>
+          <p className="mt-1 text-muted">
+            {events.filter(bulkAllDayEligible).length} event(s) have a title and date but no time or
+            all-day/half-day wording. You can treat them all as all-day events. This is your decision,
+            not something the app assumes; each event keeps an edit-history entry. Ambiguous or
+            conflicting events are not included.
+          </p>
+          <button
+            className="mt-2 rounded bg-accent px-3 py-1.5 font-medium text-white dark:text-black"
+            onClick={() => {
+              const n = events.filter(bulkAllDayEligible).length;
+              if (!window.confirm(`Mark ${n} event(s) as all-day and confirm them?`)) return;
+              setBulkMsg(`${bulkAllDay()} event(s) marked all-day by you.`);
+            }}
+          >
+            Treat {events.filter(bulkAllDayEligible).length} as all-day…
+          </button>
+        </section>
+      )}
+      {bulkMsg && <p role="status" className="text-sm text-ok">{bulkMsg}</p>}
 
       <LegendPanel />
 
