@@ -1,3 +1,13 @@
+import os
+
+# Tests must be hermetic: never read a developer's real backend/.env or SCHOOLSYNC_* variables
+# (they can hold live Google credentials). This runs before any app module builds Settings.
+for _k in [k for k in os.environ if k.startswith("SCHOOLSYNC_")]:
+    del os.environ[_k]
+from app.config import Settings
+
+Settings.model_config["env_file"] = None
+
 import json
 import runpy
 from pathlib import Path

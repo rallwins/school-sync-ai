@@ -428,3 +428,22 @@ def test_global_log_redaction_covers_any_logger(caplog):
     with caplog.at_level(logging.INFO):
         logging.getLogger("some.other.module").warning("calling with Bearer ya29.GLOBALLEAK")
     assert "GLOBALLEAK" not in caplog.text and "[REDACTED]" in caplog.text
+
+
+def test_log_redaction_keeps_uvicorn_style_args_intact_and_redacts_urls(caplog):
+    """Regression: collapsing args broke uvicorn's 5-argument access-log formatter."""
+    from app.providers.oauth import install_log_redaction
+
+    install_log_redaction()
+    with caplog.at_level(logging.INFO):
+        logging.getLogger("uvicorn.access").info(
+            '%s - "%s %s HTTP/%s" %d',
+            "127.0.0.1:1",
+            "GET",
+            "/api/oauth/google/callback?state=ABC&code=4/0SECRET&scope=x",
+            "1.1",
+            302,
+        )
+    rec = caplog.records[-1]
+    assert len(rec.args) == 5 and rec.args[4] == 302  # shape preserved
+    assert "4/0SECRET" not in caplog.text and "[REDACTED]" in caplog.text

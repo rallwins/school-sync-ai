@@ -68,3 +68,22 @@ test("picking a Google calendar routes the sync to it, with an explicit REAL-cal
   expect(previewBody.calendar_id).toBe("test-cal-id");
   await expect(page.getByRole("button", { name: "Confirm and sync" })).toBeDisabled();
 });
+
+test("sync page explains exactly why it cannot preview yet, then clears", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Calendar PDF").setInputFiles(PDF);
+  await page.getByLabel("School name").fill("Checklist Test School");
+  await page.getByRole("button", { name: "Upload and analyse" }).click();
+  await expect(page.getByRole("heading", { name: "Review events" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Export & sync", exact: true }).click();
+  const box = page.getByRole("status").filter({ hasText: "Before you can preview a sync" });
+  await expect(box).toContainText("Legend mapping is not confirmed.");
+  await expect(page.getByRole("button", { name: /Preview sync/ })).toBeDisabled();
+
+  await page.getByRole("link", { name: "Review", exact: true }).click();
+  await page.getByLabel("I have checked that this legend mapping is correct.").check();
+  await page.getByRole("link", { name: "Export & sync", exact: true }).click();
+  await expect(page.getByText(/✓ Ready to preview/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Preview sync/ })).toBeEnabled();
+});

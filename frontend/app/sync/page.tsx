@@ -176,6 +176,27 @@ export default function SyncPage() {
           The demo calendar is in memory and resets when the server restarts. Microsoft is not implemented.
         </p>
 
+        {(() => {
+          const unmet: { text: string; href: string; link: string }[] = [];
+          if (!legendConfirmed) unmet.push({ text: "Legend mapping is not confirmed.", href: "/review", link: "Confirm it on Review" });
+          if (ready.length === 0) unmet.push({ text: "No events are ready yet.", href: "/review", link: "Resolve or bulk-confirm events on Review" });
+          if (!dest) unmet.push({ text: "No destination chosen.", href: "/connect", link: "Choose one on Connect" });
+          else if (!destProvider?.available)
+            unmet.push({ text: `${dest.provider === "google" ? "Google" : "The destination"} is unavailable (${destProvider?.reason ?? "unknown"}).`, href: "/connect", link: "Fix it on Connect" });
+          return unmet.length === 0 ? (
+            <p role="status" className="mt-3 text-ok">✓ Ready to preview: {ready.length} event(s) ready, destination {dest?.calendarName}.</p>
+          ) : (
+            <div role="status" className="mt-3 rounded border border-warn p-3">
+              <p className="font-medium">Before you can preview a sync:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {unmet.map((u) => (
+                  <li key={u.text}>{u.text} <Link className="text-accent underline" href={u.href}>{u.link}</Link></li>
+                ))}
+              </ul>
+            </div>
+          );
+        })()}
+
         <div className="mt-3 flex gap-2">
           <button disabled={!canAct || !dest || !destProvider?.available || busy} className={btn}
             onClick={() => run(() => previewSync(body()), (p) => { setPreview(p); setReport(null); setConfirmed(false); setRolled(null); })}>

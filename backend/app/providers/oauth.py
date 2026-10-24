@@ -57,7 +57,12 @@ _installed = False
 
 
 def install_log_redaction() -> None:
-    """Redact secrets from every log record, whichever logger/handler emits it."""
+    """Redact secrets from every log record, whichever logger/handler emits it.
+
+    Redacts the message template and any string arguments IN PLACE and keeps the argument
+    tuple's shape: uvicorn's access formatter unpacks exactly five args, so collapsing them into
+    a pre-formatted message (an earlier version did) broke every request log line.
+    """
     global _installed
     if _installed:
         return
@@ -65,8 +70,10 @@ def install_log_redaction() -> None:
 
     def factory(*args: object, **kwargs: object) -> logging.LogRecord:
         record = previous(*args, **kwargs)
-        record.msg = redact(record.getMessage())
-        record.args = ()
+        if isinstance(record.msg, str):
+            record.msg = redact(record.msg)
+        if isinstance(record.args, tuple):
+            record.args = tuple(redact(a) if isinstance(a, str) else a for a in record.args)
         return record
 
     logging.setLogRecordFactory(factory)
