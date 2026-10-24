@@ -1,0 +1,9 @@
+# Backend only for now; the frontend service is added when the Next.js app exists.
+services:
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    env_file: [.env.example]
+    volumes: ["schoolsync-data:/app/data"]
+volumes:
+  schoolsync-data:
