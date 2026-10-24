@@ -51,6 +51,9 @@ backend; see [infra/aws/README.md](infra/aws/README.md)). No real Google/Outlook
 
 ## Run locally
 
+Easiest (Windows): `.\scripts\dev.ps1` starts the backend (:8000) and frontend (:3000) in their own
+windows and builds the frontend on first run; `.\scripts\dev.ps1 -Stop` stops them. Manual steps:
+
 ```powershell
 # terminal 1
 cd backend; .venv\Scripts\python -m uvicorn app.api.main:app --port 8000

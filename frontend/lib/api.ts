@@ -28,7 +28,7 @@ export async function extractCalendar(
   try {
     res = await fetch(`${API_URL}/api/uploads/extract`, { method: "POST", body: fd });
   } catch {
-    throw new ApiError("network", `Cannot reach the API at ${API_URL}. Is the backend running?`);
+    throw new ApiError("network", `Cannot reach the API at ${API_URL}. The backend is not running or was restarted: start both apps with scripts/dev.ps1, then retry.`);
   }
   if (!res.ok) {
     let code = "error";
@@ -65,7 +65,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     res = await fetch(`${API_URL}${path}`, init);
   } catch {
-    throw new ApiError("network", `Cannot reach the API at ${API_URL}.`);
+    throw new ApiError("network", `Cannot reach the API at ${API_URL}. The backend is not running or was restarted: start both apps with scripts/dev.ps1, then retry.`);
   }
   if (!res.ok) {
     let code = "error";
@@ -117,7 +117,7 @@ export async function downloadExport(
       post({ events, day_start: dayStart ? dayStart + ":00" : null }),
     );
   } catch {
-    throw new ApiError("network", `Cannot reach the API at ${API_URL}.`);
+    throw new ApiError("network", `Cannot reach the API at ${API_URL}. The backend is not running or was restarted: start both apps with scripts/dev.ps1, then retry.`);
   }
   if (!res.ok) {
     const d = (await res.json().catch(() => ({}))).detail ?? {};
