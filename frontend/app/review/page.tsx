@@ -50,6 +50,9 @@ export default function ReviewPage() {
         <div>
           <h1 className="text-xl font-semibold">Review events</h1>
           <p className="text-sm text-muted">{meta?.fileName} · {meta?.school} · {meta?.academicYear}</p>
+          {meta?.schoolSource && (
+            <p className="text-xs text-muted">School name {meta.schoolSource}. If it is wrong, import again and type the name.</p>
+          )}
         </div>
         <p role="status" className="text-sm">
           {s.total} events · <span className="text-ok">{s.ready} ready</span> ·{" "}

@@ -37,6 +37,12 @@ class MockProvider:
     def list_calendars(self) -> list[CalendarInfo]:
         return list(self.calendars.values())
 
+    def create_calendar(self, name: str, time_zone: str) -> CalendarInfo:
+        cid = f"cal-{next(self._ids)}"
+        self.calendars[cid] = CalendarInfo(cid, name)
+        self.events[cid] = {}
+        return CalendarInfo(cid, name)
+
     def _cal(self, cid: str) -> dict[str, ProviderEvent]:
         if cid not in self.events:
             raise ProviderError(f"unknown calendar {cid}")

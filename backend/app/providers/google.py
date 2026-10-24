@@ -46,6 +46,8 @@ def to_google(ev: ProviderEvent) -> dict[str, Any]:
         "description": ev.description,
         "extendedProperties": {"private": dict(ev.private_props)},
     }
+    if ev.color_id:
+        body["colorId"] = ev.color_id
     if ev.all_day:
         body["start"] = {"date": ev.start_date.isoformat()}
         body["end"] = {"date": (ev.end_date + timedelta(days=1)).isoformat()}  # exclusive
@@ -68,6 +70,7 @@ def from_google(item: dict[str, Any]) -> ProviderEvent:
             start_date=date.fromisoformat(s["date"]),
             end_date=date.fromisoformat(e["date"]) - timedelta(days=1),
             all_day=True, description=item.get("description", ""), private_props=dict(props),
+            color_id=item.get("colorId"),
         )  # fmt: skip
     sd, ed = datetime.fromisoformat(s["dateTime"]), datetime.fromisoformat(e["dateTime"])
     return ProviderEvent(
@@ -75,7 +78,7 @@ def from_google(item: dict[str, Any]) -> ProviderEvent:
         all_day=False, start_time=time(sd.hour, sd.minute),
         end_time=None if ed == sd else time(ed.hour, ed.minute),
         timezone=s.get("timeZone"), description=item.get("description", ""),
-        private_props=dict(props),
+        private_props=dict(props), color_id=item.get("colorId"),
     )  # fmt: skip
 
 
@@ -126,6 +129,11 @@ class GoogleCalendarProvider:
             "/users/me/calendarList", {"minAccessRole": "writer", "maxResults": "250"}
         )
         return [CalendarInfo(r["id"], r.get("summary", r["id"])) for r in rows]
+
+    def create_calendar(self, name: str, time_zone: str) -> CalendarInfo:
+        r = self._req("POST", "/calendars", json={"summary": name, "timeZone": time_zone})
+        data = r.json()
+        return CalendarInfo(data["id"], data.get("summary", name))
 
     def list_events(self, calendar_id: str, start: date, end: date) -> list[ProviderEvent]:
         rows = self._paged(

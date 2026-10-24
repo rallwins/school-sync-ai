@@ -11,6 +11,7 @@ from app.api.oauth_routes import build_oauth_router
 from app.api.sync_routes import build_router
 from app.config import get_settings
 from app.extraction.pipeline import ImportContext, extract_events
+from app.extraction.school_name import detect_school_name
 from app.imports.store import Store
 from app.ingestion.validate import UploadRejected, validate_pdf
 from app.pdf.layout import extract_layout
@@ -92,7 +93,7 @@ def create_app(
     @app.post("/api/uploads/extract", response_model=ExtractionResult)
     async def upload_extract(
         file: UploadFile = File(...),
-        school_name: str = Form(..., max_length=200),
+        school_name: str = Form("", max_length=200),  # blank = detect from the PDF
         academic_year: str = Form(..., max_length=20),
         timezone: str = Form(...),
         color_tolerance: float = Form(12.0, ge=1.0, le=40.0),
@@ -109,8 +110,20 @@ def create_app(
         except UploadRejected as e:
             status = 413 if e.code == "too_large" else 422
             raise HTTPException(status_code=status, detail={"code": e.code, "message": str(e)})
-        ctx = ImportContext(school_name, academic_year, timezone, v.sha256[:16], color_tolerance)
-        return extract_events(extract_layout(v.data, v.sha256), ctx)
+        layout = extract_layout(v.data, v.sha256)
+        name, source = school_name.strip(), "you entered it"
+        if not name:
+            guess = detect_school_name(layout)
+            if guess is None:
+                raise HTTPException(422, detail={
+                    "code": "school_name_required",
+                    "message": "Could not find a school name in the PDF. Please type it in.",
+                })  # fmt: skip
+            name, source = guess.name, f"detected from {guess.where}"
+        ctx = ImportContext(name, academic_year, timezone, v.sha256[:16], color_tolerance)
+        result = extract_events(layout, ctx)
+        result.school_name, result.school_name_source = name, source
+        return result
 
     return app
 

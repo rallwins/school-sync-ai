@@ -27,6 +27,8 @@ TOKEN_URL = "https://oauth2.googleapis.com/token"
 SCOPES = [
     "https://www.googleapis.com/auth/calendar.events",
     "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+    # lets the app create its own secondary calendar (and only manage calendars it created)
+    "https://www.googleapis.com/auth/calendar.app.created",
 ]
 
 _SECRET_PATTERNS = [

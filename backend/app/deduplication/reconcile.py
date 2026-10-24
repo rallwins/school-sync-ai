@@ -15,7 +15,13 @@ from dataclasses import asdict, dataclass
 from datetime import date, time
 from typing import Literal
 
-from app.deduplication.identity import compute_fingerprint, norm_title, stable_ids, title_similarity
+from app.deduplication.identity import (
+    compute_fingerprint,
+    norm_title,
+    stable_ids,
+    sync_fingerprint,
+    title_similarity,
+)
 from app.imports.store import ManifestRecord
 from app.providers.base import FP_PROP, OWNER_PROP, ProviderEvent
 from app.providers.shape import shape_event
@@ -82,7 +88,7 @@ def plan_sync(
         if not is_ready(ev):
             items.append(mk("skip", "needs review; not ready to sync"))
             continue
-        fp = compute_fingerprint(ev)
+        fp = sync_fingerprint(ev)
         pe = owned.get(sid)
         rec = manifest.get(sid)
         if pe is not None:  # layer A: ours, found in the destination

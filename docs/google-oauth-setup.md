@@ -20,6 +20,18 @@ calendar** for the first run. The app never connects or writes without your expl
    (use a throwaway test calendar). Sync then targets exactly that calendar, shows a REAL-calendar
    warning, and still needs your plan confirmation. **Disconnect** forgets the stored tokens.
 
-Scopes requested: `calendar.events` and `calendar.calendarlist.readonly` only.
+Scopes requested (least privilege, never the full `calendar` scope):
+- `calendar.events`: create/update events (only events this app owns are ever changed or deleted)
+- `calendar.calendarlist.readonly`: list your calendars so you can pick one
+- `calendar.app.created`: create a NEW secondary calendar named after the school, and manage only
+  calendars this app created
+
+If you connected before `calendar.app.created` was added, press **Reconnect** on the Connect page
+once; Google asks for the extra permission. Creating a calendar needs an explicit confirmation and
+the app refuses to create a second calendar with the same name (it offers to use the existing one).
+
+Colours: each legend category is mapped to one of Google's darker event colours by hue
+(for example teal to Peacock, gold to Banana, orange to Tangerine, cream/grey to Graphite) and the
+mapping is shown on the sync preview. Changing the mapping updates only events this app created.
 Google is intentionally NOT enabled on the public demo (shared key, no user accounts): run it locally.
 

@@ -96,6 +96,8 @@ class LegendMatch(BaseModel):
 
 class ExtractionResult(BaseModel):
     source_hash: str
+    school_name: str = ""
+    school_name_source: str = ""  # "you entered it" or where it was detected
     legend: list[LegendEntry]
     events: list[CalendarEvent]
     warnings: list[str] = Field(default_factory=list)

@@ -227,6 +227,19 @@ export default function SyncPage() {
               {Object.entries(preview.counts).filter(([, n]) => n > 0)
                 .map(([k, n]) => `${n} ${ACTION_TEXT[k].toLowerCase()}`).join(" · ") || "Nothing to do"}
             </p>
+            {preview.category_colors && preview.category_colors.length > 0 && (
+              <div>
+                <p className="text-xs text-muted">Colours events will get in Google Calendar (by legend category):</p>
+                <ul className="mt-1 flex flex-wrap gap-3">
+                  {preview.category_colors.map((c) => (
+                    <li key={c.category} className="flex items-center gap-1.5">
+                      <span aria-hidden className="inline-block h-3 w-3 rounded-sm" style={{ background: c.hex }} />
+                      {c.category}: {c.color_name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <table className="w-full text-left">
               <caption className="sr-only">Sync plan</caption>
               <thead className="text-muted"><tr><th scope="col">Action</th><th scope="col">Event</th><th scope="col">Why</th></tr></thead>

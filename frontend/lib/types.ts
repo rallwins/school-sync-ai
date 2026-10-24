@@ -45,6 +45,8 @@ export interface LegendEntry {
 }
 export interface ExtractionResult {
   source_hash: string;
+  school_name: string;
+  school_name_source: string;
   legend: LegendEntry[];
   events: CalendarEvent[];
   warnings: string[];
@@ -54,6 +56,7 @@ export interface ExtractionResult {
 export interface ImportMeta {
   fileName: string;
   school: string;
+  schoolSource?: string;
   academicYear: string;
   timezone: string;
   destination: "file" | "google" | "microsoft";
@@ -82,7 +85,14 @@ export interface PlanItem {
   reason: string;
   matched_title: string | null;
 }
+export interface CategoryColor {
+  category: string;
+  color_id: string;
+  color_name: string;
+  hex: string;
+}
 export interface SyncPreview {
+  category_colors?: CategoryColor[];
   items: PlanItem[];
   counts: Record<PlanAction, number>;
   plan_token: string;

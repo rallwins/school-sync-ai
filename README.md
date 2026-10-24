@@ -28,7 +28,8 @@ backend; see [infra/aws/README.md](infra/aws/README.md)). No real Google/Outlook
 | `docker-compose.yml`, CI workflow | Written, never run |
 | Deployment: Vercel + Lambda Function URL (CloudFormation) | Deployed; full e2e flow passed against the live URL |
 | PPTX deck (`presentation/`), demo video (`video/`, silent + captions), ADRs 1-5, threat model, diagrams | Written; deck not visually reviewed, Mermaid not rendered |
-| Google adapter + OAuth (PKCE, encrypted tokens) | Implemented, **mocked-HTTP tests only** |
+| Google adapter + OAuth (PKCE, encrypted tokens); create-a-calendar named after the school; category colours | Implemented. Connection, calendar listing and a first sync were exercised by the owner on a real account; the rest (calendar creation, colours) is covered by mocked-HTTP tests only until run for real |
+| School name detection from the PDF text | Implemented, tested on 3 synthetic PDFs and 1 real one (text only: a logo image cannot be read; the name is editable) |
 
 ## Verified results (this machine)
 

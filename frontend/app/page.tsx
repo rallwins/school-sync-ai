@@ -33,7 +33,7 @@ export default function ImportPage() {
     if (!file.name.toLowerCase().endsWith(".pdf")) return setError("File must be a .pdf.");
     const m: ImportMeta = {
       fileName: file.name,
-      school: String(f.get("school")).trim(),
+      school: String(f.get("school")).trim(), // may be blank: the server detects it
       academicYear: String(f.get("year")).trim(),
       timezone: String(f.get("tz")).trim(),
       destination: "file",
@@ -46,9 +46,11 @@ export default function ImportPage() {
         timezone: m.timezone,
         tolerance: Number(f.get("tolerance")),
       });
-      load(m, res);
+      load({ ...m, school: res.school_name, schoolSource: res.school_name_source }, res);
       // Record once, at upload time, so a re-upload of the same PDF is recognised.
-      setImportRec(await recordImport(m, res.source_hash, res.events).catch(() => null));
+      setImportRec(
+        await recordImport({ ...m, school: res.school_name }, res.source_hash, res.events).catch(() => null),
+      );
       router.push("/review");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Unexpected error.");
@@ -74,8 +76,8 @@ export default function ImportPage() {
             <input name="file" type="file" accept="application/pdf,.pdf" required className={input} />
           </label>
           <label className="block text-sm">
-            School name
-            <input name="school" required maxLength={200} defaultValue="Maple Grove Academy" className={input} />
+            School name <span className="text-muted">(optional: detected from the PDF if left blank)</span>
+            <input name="school" maxLength={200} placeholder="e.g. Maple Grove Academy" className={input} />
           </label>
           <div className="grid grid-cols-2 gap-4">
             <label className="block text-sm">

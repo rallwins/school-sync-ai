@@ -9,6 +9,7 @@ export class ApiError extends Error {
   constructor(
     public code: string,
     message: string,
+    public extra?: { calendar?: { id: string; name: string } },
   ) {
     super(message);
   }
@@ -70,17 +71,19 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     let code = "error";
     let msg = `Request failed (${res.status}).`;
+    let extra: ApiError["extra"];
     try {
       const d = (await res.json()).detail;
       if (d && typeof d === "object" && !Array.isArray(d)) {
         code = d.code ?? code;
         msg = d.message ?? msg;
         if (Array.isArray(d.titles)) msg += ` (${d.titles.join(", ")})`;
+        extra = d.calendar ? { calendar: d.calendar } : undefined;
       }
     } catch {
       /* non-JSON body */
     }
-    throw new ApiError(code, msg);
+    throw new ApiError(code, msg, extra);
   }
   return (await res.json()) as T;
 }
@@ -151,3 +154,9 @@ export const oauthDisconnect = () =>
   call<{ connected: boolean }>("/api/oauth/google/disconnect", { method: "POST" });
 export const listCalendars = (providerId: string) =>
   call<CalendarOption[]>(`/api/providers/${encodeURIComponent(providerId)}/calendars`);
+
+export const createCalendar = (providerId: string, name: string, timeZone: string) =>
+  call<CalendarOption>(
+    `/api/providers/${encodeURIComponent(providerId)}/calendars`,
+    post({ name, time_zone: timeZone, confirm: true }),
+  );

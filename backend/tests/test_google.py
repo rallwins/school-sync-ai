@@ -242,7 +242,9 @@ def test_start_builds_pkce_url_with_least_privilege_scopes():
     assert scopes == [
         "https://www.googleapis.com/auth/calendar.events",
         "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+        "https://www.googleapis.com/auth/calendar.app.created",
     ]
+    assert not any(s.endswith("/auth/calendar") for s in scopes)  # never the all-powerful scope
     assert store.consume_oauth_state(q["state"][0]) is not None
 
 

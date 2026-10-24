@@ -89,3 +89,74 @@ test("sync page explains exactly why it cannot preview yet, then clears", async 
   await expect(page.getByRole("button", { name: /Preview sync/ })).toBeEnabled();
 });
 
+
+
+test("blank school name is detected from the PDF, then used to create a named Google calendar", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Calendar PDF").setInputFiles(PDF);
+  await expect(page.getByLabel(/School name/)).toHaveValue(""); // optional: left blank on purpose
+  await expect(page.getByLabel("Timezone")).toHaveValue("Asia/Kolkata"); // default timezone
+  await page.getByRole("button", { name: "Upload and analyse" }).click();
+  await expect(page.getByRole("heading", { name: "Review events" })).toBeVisible();
+  await expect(page.getByText(/Maple Grove Academy/).first()).toBeVisible();
+  await expect(page.getByText(/School name detected from title text on page 1/)).toBeVisible();
+
+  // Google "connected" (network mocked), with no calendar of that name yet.
+  const providers = [
+    { id: "file", label: "File export (ICS/CSV)", available: true, reason: null },
+    { id: "mock", label: "Demo calendar (in-memory)", available: true, reason: null },
+    { id: "google", label: "Google Calendar", available: true, reason: null },
+    { id: "microsoft", label: "Microsoft Outlook", available: false, reason: "not configured" },
+  ];
+  await page.route("**/api/providers", (r) => r.fulfill({ json: providers }));
+  let created: { name?: string; time_zone?: string; confirm?: boolean } | null = null;
+  await page.route("**/api/providers/google/calendars", async (r) => {
+    if (r.request().method() === "POST") {
+      created = JSON.parse(r.request().postData() ?? "{}");
+      await r.fulfill({ json: { id: "new-cal-id", name: created?.name } });
+    } else {
+      await r.fulfill({ json: [{ id: "primary", name: "me@example.com" }] });
+    }
+  });
+
+  await page.getByRole("link", { name: "Connect", exact: true }).click();
+  await expect(page.getByLabel("Calendar name")).toHaveValue("Maple Grove Academy"); // prefilled, editable
+  let dialog = "";
+  page.once("dialog", async (d) => { dialog = d.message(); await d.accept(); });
+  await page.getByRole("button", { name: /Create calendar/ }).click();
+  await expect(page.getByText(/Created .Maple Grove Academy. and selected it/)).toBeVisible();
+  expect(dialog).toContain("Create a new Google calendar named");
+  expect(dialog).toContain("Maple Grove Academy");
+  expect(created).toEqual({ name: "Maple Grove Academy", time_zone: "Asia/Kolkata", confirm: true });
+  await expect(page.getByRole("status").filter({ hasText: "Google: Maple Grove Academy" })).toBeVisible();
+});
+
+test("creating a calendar whose name exists offers to use the existing one (no duplicate)", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Calendar PDF").setInputFiles(PDF);
+  await page.getByRole("button", { name: "Upload and analyse" }).click();
+  await expect(page.getByRole("heading", { name: "Review events" })).toBeVisible();
+  const providers = [
+    { id: "file", label: "File export (ICS/CSV)", available: true, reason: null },
+    { id: "mock", label: "Demo calendar (in-memory)", available: true, reason: null },
+    { id: "google", label: "Google Calendar", available: true, reason: null },
+    { id: "microsoft", label: "Microsoft Outlook", available: false, reason: "not configured" },
+  ];
+  await page.route("**/api/providers", (r) => r.fulfill({ json: providers }));
+  await page.route("**/api/providers/google/calendars", async (r) => {
+    if (r.request().method() === "POST") {
+      await r.fulfill({
+        status: 409,
+        json: { detail: { code: "calendar_exists", message: "A calendar named Maple Grove Academy already exists; use it instead.", calendar: { id: "have-it", name: "Maple Grove Academy" } } },
+      });
+    } else {
+      await r.fulfill({ json: [{ id: "have-it", name: "Maple Grove Academy" }] });
+    }
+  });
+  await page.getByRole("link", { name: "Connect", exact: true }).click();
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: /Create calendar/ }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "already exists" })).toBeVisible();
+  await page.getByRole("button", { name: /Use the existing/ }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Google: Maple Grove Academy" })).toBeVisible();
+});

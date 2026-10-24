@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import time
 from functools import partial
 
-from app.deduplication.identity import compute_fingerprint
+from app.deduplication.identity import sync_fingerprint
 from app.deduplication.reconcile import PlanItem
 from app.imports.store import ManifestRecord, Store
 from app.providers.base import (
@@ -27,6 +27,7 @@ from app.providers.base import (
     RateLimited,
     TransientError,
 )
+from app.providers.colors import google_color_for
 from app.providers.shape import shape_event
 from app.schemas import CalendarEvent
 
@@ -63,7 +64,8 @@ def to_provider_event(
         end_time=s.end_time,
         timezone=None if s.all_day else ev.timezone,
         description=s.description,
-        private_props={OWNER_PROP: sid, FP_PROP: compute_fingerprint(ev), BATCH_PROP: batch_id},
+        color_id=c.color_id if (c := google_color_for(ev.matched_legend_color)) else None,
+        private_props={OWNER_PROP: sid, FP_PROP: sync_fingerprint(ev), BATCH_PROP: batch_id},
     )
 
 
@@ -110,7 +112,7 @@ def execute_plan(
 
     def record(sid: str, pe: ProviderEvent, ev: CalendarEvent, batch: str) -> None:
         store.upsert_mapping(
-            ManifestRecord(sid, provider.name, calendar_id, pe.id, compute_fingerprint(ev), batch)
+            ManifestRecord(sid, provider.name, calendar_id, pe.id, sync_fingerprint(ev), batch)
         )
 
     for it in items:

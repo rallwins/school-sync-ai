@@ -35,6 +35,17 @@ def compute_fingerprint(ev: CalendarEvent) -> str:
     return hashlib.sha256(key.encode()).hexdigest()[:32]
 
 
+def sync_fingerprint(ev: CalendarEvent) -> str:
+    """What we compare against the destination: the content fingerprint PLUS the colour we would
+    apply, so changing the colour mapping updates our own events instead of being skipped."""
+    from app.providers.colors import google_color_for
+
+    c = google_color_for(ev.matched_legend_color)
+    return hashlib.sha256(
+        f"{compute_fingerprint(ev)}|{c.color_id if c else ''}".encode()
+    ).hexdigest()[:32]
+
+
 def stable_ids(events: Iterable[CalendarEvent]) -> dict[str, str]:
     """Map event_id_internal -> stable_id (collisions on the same start date get a suffix)."""
     seen: Counter[str] = Counter()

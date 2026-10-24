@@ -11,6 +11,7 @@ from app.deduplication.reconcile import counts, diff_imports, plan_sync, plan_to
 from app.imports.executor import execute_plan, rollback_batch
 from app.imports.store import Store
 from app.providers.base import CalendarProvider, ProviderError
+from app.providers.colors import google_color_for
 from app.providers.export_files import build_csv, build_ics
 from app.providers.shape import NotExportable
 from app.schemas import CalendarEvent
@@ -142,8 +143,18 @@ def build_router(
     @r.post("/sync/preview")
     def preview(req: SyncReq) -> dict[str, object]:
         _, items = make_plan(req)
+        seen: dict[str, dict[str, str]] = {}
+        for e in req.events:  # which destination colour each category will get (transparency)
+            g = google_color_for(e.matched_legend_color)
+            if g and e.category_label and e.category_label not in seen:
+                seen[e.category_label] = {
+                    "category": e.category_label,
+                    "color_id": g.color_id,
+                    "color_name": g.name,
+                    "hex": g.hex,
+                }
         return {"items": [asdict(i) for i in items], "counts": counts(items),
-                "plan_token": plan_token(items)}  # fmt: skip
+                "plan_token": plan_token(items), "category_colors": list(seen.values())}  # fmt: skip
 
     @r.post("/sync/execute")
     def execute(req: ExecuteReq) -> dict[str, object]:

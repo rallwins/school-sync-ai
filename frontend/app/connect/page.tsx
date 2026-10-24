@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { ApiError, listCalendars, listProviders, oauthDisconnect, oauthStart } from "@/lib/api";
+import { ApiError, createCalendar, listCalendars, listProviders, oauthDisconnect, oauthStart } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import type { CalendarOption, ProviderInfo } from "@/lib/types";
 
@@ -15,7 +15,10 @@ const REASONS: Record<string, string> = {
 
 function ConnectInner() {
   const params = useSearchParams();
-  const { destination, setDestination } = useStore();
+  const { destination, setDestination, meta } = useStore();
+  const [calName, setCalName] = useState("");
+  const [existing, setExisting] = useState<CalendarOption | null>(null);
+  const [created, setCreated] = useState<string | null>(null);
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [calendars, setCalendars] = useState<CalendarOption[]>([]);
   const [pick, setPick] = useState("");
@@ -38,6 +41,10 @@ function ConnectInner() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+  // prefill the new calendar's name with the school name (editable)
+  useEffect(() => {
+    if (meta?.school) setCalName((cur) => cur || meta.school);
+  }, [meta?.school]);
 
   const google = providers.find((p) => p.id === "google");
   const demo = providers.find((p) => p.id === "mock");
@@ -133,6 +140,13 @@ function ConnectInner() {
               <button
                 className={btn}
                 disabled={busy}
+                onClick={() => act(async () => { window.location.href = (await oauthStart()).auth_url; })}
+              >
+                Reconnect
+              </button>
+              <button
+                className={btn}
+                disabled={busy}
                 onClick={() => act(async () => {
                   await oauthDisconnect();
                   if (destination?.provider === "google") setDestination(null);
@@ -150,6 +164,64 @@ function ConnectInner() {
           </div>
         )}
       </section>
+
+      {google?.available && (
+        <section aria-labelledby="h-create" className="rounded border border-line bg-surface p-4 text-sm">
+          <h2 id="h-create" className="font-semibold">Create a calendar for this school</h2>
+          <p className="mt-1 text-muted">
+            Makes a new, separate Google calendar so these events never mix with your own. Nothing is created until you confirm.
+          </p>
+          <label className="mt-2 block">
+            Calendar name
+            <input
+              className="mt-1 w-full rounded border border-line bg-surface px-2 py-1"
+              value={calName}
+              maxLength={100}
+              onChange={(e) => { setCalName(e.target.value); setExisting(null); }}
+              placeholder="Import a PDF first to prefill the school name"
+            />
+          </label>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              className={primary}
+              disabled={busy || calName.trim() === ""}
+              onClick={() => act(async () => {
+                const name = calName.trim();
+                if (!window.confirm(`Create a new Google calendar named \u201c${name}\u201d in your account?`)) return;
+                try {
+                  const c = await createCalendar("google", name, meta?.timezone ?? "Asia/Kolkata");
+                  setDestination({ provider: "google", calendarId: c.id, calendarName: c.name });
+                  setCreated(`Created \u201c${c.name}\u201d and selected it as the destination.`);
+                  setExisting(null);
+                  await refresh();
+                } catch (e) {
+                  if (e instanceof ApiError && e.code === "calendar_exists" && e.extra?.calendar) setExisting(e.extra.calendar);
+                  throw e;
+                }
+              })}
+            >
+              Create calendar…
+            </button>
+            {existing && (
+              <button
+                className={btn}
+                onClick={() => {
+                  setDestination({ provider: "google", calendarId: existing.id, calendarName: existing.name });
+                  setCreated(`Using the existing calendar \u201c${existing.name}\u201d.`);
+                  setError(null);
+                }}
+              >
+                Use the existing \u201c{existing.name}\u201d
+              </button>
+            )}
+          </div>
+          {created && <p role="status" className="mt-2 text-ok">{created}</p>}
+          <p className="mt-2 text-xs text-muted">
+            If creation is refused, press Reconnect above once: creating calendars needs one extra Google permission
+            (it only lets this app manage calendars it created itself).
+          </p>
+        </section>
+      )}
 
       <section aria-labelledby="h-demo" className="rounded border border-line bg-surface p-4 text-sm">
         <h2 id="h-demo" className="font-semibold">Demo calendar</h2>

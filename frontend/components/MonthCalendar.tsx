@@ -1,6 +1,7 @@
 "use client";
 import { readiness } from "@/lib/readiness";
 import type { CalendarEvent } from "@/lib/types";
+import { chipColor } from "@/lib/color";
 import { css } from "./LegendPanel";
 
 function ymd(d: Date): string {
@@ -68,11 +69,11 @@ export function MonthCalendar({
                         aria-label={`${e.event_title}, ${e.start_date}`}
                         aria-pressed={e.event_id_internal === selectedId}
                         className={
-                          "mt-0.5 block w-full truncate rounded px-1 text-left text-[11px] text-black " +
+                          "mt-0.5 block w-full truncate rounded px-1 text-left text-[11px] font-medium text-white " +
                           (e.event_id_internal === selectedId ? "ring-2 ring-accent " : "") +
                           (readiness(e) === "ready" ? "" : "border border-dashed border-warn")
                         }
-                        style={{ background: e.sampled_color ? css(e.sampled_color) : "#e5e7eb" }}
+                        style={{ background: e.sampled_color ? css(chipColor(e.sampled_color)) : "#4b5563" }}
                       >
                         {readiness(e) === "ready" ? "" : "⚠ "}
                         {e.event_title}

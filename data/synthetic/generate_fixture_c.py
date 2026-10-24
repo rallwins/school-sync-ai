@@ -167,6 +167,8 @@ def main():
     c.setTitle("Cedar Hill School 2025-26 (synthetic)")
     c.setFont("Helvetica-Bold", 28)
     c.drawString(80, y(250), "Annual Calendar 2025 - 2026")
+    c.setFont("Helvetica", 16)
+    c.drawString(80, y(300), "Cedar Hill School")
     c.showPage()  # page 1: cover
     for i, months in enumerate(PAGES):
         draw_page(c, months, last=(i == len(PAGES) - 1))
