@@ -1,4 +1,4 @@
-﻿# Google Calendar setup (NOT yet verified against real Google)
+# Google Calendar setup (NOT yet verified against real Google)
 
 The adapter and the Connect page are tested against mocked HTTP and a mocked browser network only;
 they have **never** been run against real Google. Use a **test Google account and a throwaway

@@ -81,9 +81,11 @@ test("sync page explains exactly why it cannot preview yet, then clears", async 
   await expect(box).toContainText("Legend mapping is not confirmed.");
   await expect(page.getByRole("button", { name: /Preview sync/ })).toBeDisabled();
 
-  await page.getByRole("link", { name: "Review", exact: true }).click();
-  await page.getByLabel("I have checked that this legend mapping is correct.").check();
-  await page.getByRole("link", { name: "Export & sync", exact: true }).click();
+  // The legend is shown right here and can be confirmed in place (no trip back to Review).
+  await expect(box.getByText("Legend as read from your PDF")).toBeVisible();
+  await expect(box.getByText("Holiday / No School")).toBeVisible();
+  await box.getByLabel("I have checked that this legend mapping is correct.").click(); // box disappears once confirmed
   await expect(page.getByText(/✓ Ready to preview/)).toBeVisible();
   await expect(page.getByRole("button", { name: /Preview sync/ })).toBeEnabled();
 });
+

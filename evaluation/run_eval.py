@@ -1,4 +1,4 @@
-﻿"""Evaluate extraction against labelled synthetic fixtures.  Run from repo root:
+"""Evaluate extraction against labelled synthetic fixtures.  Run from repo root:
 
     backend/.venv/Scripts/python evaluation/run_eval.py
 

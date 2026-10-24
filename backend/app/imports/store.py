@@ -3,9 +3,12 @@
 Plain sqlite3 + portable SQL so a PostgreSQL implementation can replace it behind this class.
 """
 
+import functools
 import json
 import sqlite3
+import threading
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -36,6 +39,19 @@ class ImportRow:
     events: list[CalendarEvent]
 
 
+def _locked[**P, R](fn: Callable[P, R]) -> Callable[P, R]:
+    """Serialise every Store method: one sqlite3 connection is shared by the API's thread pool,
+    and concurrent use of a single connection raises 'bad parameter or other API misuse'."""
+
+    @functools.wraps(fn)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        self = args[0]
+        with self._lock:  # type: ignore[attr-defined]
+            return fn(*args, **kwargs)
+
+    return wrapper
+
+
 def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
@@ -44,12 +60,14 @@ class Store:
     def __init__(self, path: Path | str) -> None:
         if str(path) != ":memory:":
             Path(path).parent.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()
         self.db = sqlite3.connect(str(path), check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         for f in sorted(MIGRATIONS.glob("*.sql")):
             self.db.executescript(f.read_text())
 
     # ---- imports ----
+    @_locked
     def save_import(
         self, source_hash: str, school: str, year: str, tz: str, events: list[CalendarEvent]
     ) -> ImportRow:
@@ -70,10 +88,12 @@ class Store:
             r["timezone"], [CalendarEvent.model_validate(x) for x in json.loads(r["events_json"])],
         )  # fmt: skip
 
+    @_locked
     def list_imports(self) -> list[ImportRow]:
         rows = self.db.execute("SELECT * FROM imports ORDER BY created_at DESC, rowid DESC")
         return [self._row(r) for r in rows]
 
+    @_locked
     def previous_import(self, school: str, year: str) -> ImportRow | None:
         r = self.db.execute(
             "SELECT * FROM imports WHERE school=? AND academic_yr=? "
@@ -83,6 +103,7 @@ class Store:
         return self._row(r) if r else None
 
     # ---- manifest ----
+    @_locked
     def manifest(self, provider: str, calendar_id: str) -> dict[str, ManifestRecord]:
         rows = self.db.execute(
             "SELECT * FROM provider_map WHERE provider=? AND calendar_id=? AND rolled_back=0",
@@ -96,6 +117,7 @@ class Store:
             for r in rows
         }  # fmt: skip
 
+    @_locked
     def upsert_mapping(self, m: ManifestRecord) -> None:
         self.db.execute(
             "INSERT INTO provider_map VALUES (?,?,?,?,?,?,?,0) "
@@ -107,6 +129,7 @@ class Store:
         )  # fmt: skip
         self.db.commit()
 
+    @_locked
     def batch_mappings(self, batch_id: str) -> list[ManifestRecord]:
         rows = self.db.execute(
             "SELECT * FROM provider_map WHERE batch_id=? AND rolled_back=0", (batch_id,)
@@ -117,6 +140,7 @@ class Store:
             for r in rows
         ]  # fmt: skip
 
+    @_locked
     def mark_rolled_back(self, m: ManifestRecord) -> None:
         self.db.execute(
             "UPDATE provider_map SET rolled_back=1 WHERE stable_id=? AND provider=? AND calendar_id=?",
@@ -125,11 +149,13 @@ class Store:
         self.db.commit()
 
     # ---- OAuth state + encrypted token blobs ----
+    @_locked
     def create_oauth_state(self, state: str, verifier: str, now: datetime | None = None) -> None:
         ts = (now or datetime.now(UTC)).isoformat()
         self.db.execute("INSERT INTO oauth_states VALUES (?,?,?,0)", (state, verifier, ts))
         self.db.commit()
 
+    @_locked
     def consume_oauth_state(
         self, state: str, ttl_seconds: int = 600, now: datetime | None = None
     ) -> str | None:
@@ -142,6 +168,7 @@ class Store:
         age = (now or datetime.now(UTC)) - datetime.fromisoformat(r["created_at"])
         return None if age.total_seconds() > ttl_seconds else str(r["verifier"])
 
+    @_locked
     def save_token_blob(self, provider: str, blob: str) -> None:
         self.db.execute(
             "INSERT INTO oauth_tokens VALUES (?,?,?) ON CONFLICT(provider) DO UPDATE SET "
@@ -150,16 +177,19 @@ class Store:
         )
         self.db.commit()
 
+    @_locked
     def load_token_blob(self, provider: str) -> str | None:
         r = self.db.execute(
             "SELECT blob FROM oauth_tokens WHERE provider=?", (provider,)
         ).fetchone()
         return str(r["blob"]) if r else None
 
+    @_locked
     def delete_token_blob(self, provider: str) -> None:
         self.db.execute("DELETE FROM oauth_tokens WHERE provider=?", (provider,))
         self.db.commit()
 
+    @_locked
     def audit(self, action: str, detail: str) -> None:
         self.db.execute("INSERT INTO audit VALUES (?,?,?)", (_now(), action, detail))
         self.db.commit()

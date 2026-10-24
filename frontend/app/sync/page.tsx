@@ -9,6 +9,7 @@ import {
   previewSync,
   rollbackBatch,
 } from "@/lib/api";
+import { Swatch } from "@/components/LegendPanel";
 import { readiness, summarize } from "@/lib/readiness";
 import { useStore } from "@/lib/store";
 import type { ProviderInfo, SyncPreview, SyncReport } from "@/lib/types";
@@ -22,7 +23,7 @@ const ACTION_TEXT: Record<string, string> = {
 };
 
 export default function SyncPage() {
-  const { result, events, meta, legendConfirmed, hydrated, importRec, destination } = useStore();
+  const { result, events, meta, legendConfirmed, hydrated, importRec, destination, setLegendConfirmed } = useStore();
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [dayStart, setDayStart] = useState("");
   const [preview, setPreview] = useState<SyncPreview | null>(null);
@@ -193,6 +194,22 @@ export default function SyncPage() {
                   <li key={u.text}>{u.text} <Link className="text-accent underline" href={u.href}>{u.link}</Link></li>
                 ))}
               </ul>
+              {!legendConfirmed && result.legend.length > 0 && (
+                <div className="mt-3 border-t border-line pt-2">
+                  <p className="text-xs text-muted">Legend as read from your PDF. Check it, then confirm:</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {result.legend.map((l) => (
+                      <li key={l.label + l.rgb.join()}>
+                        <Swatch rgb={l.rgb} label={`Swatch for ${l.label}`} /> {l.label}
+                      </li>
+                    ))}
+                  </ul>
+                  <label className="mt-2 flex items-center gap-2">
+                    <input type="checkbox" checked={legendConfirmed} onChange={(e) => setLegendConfirmed(e.target.checked)} />
+                    I have checked that this legend mapping is correct.
+                  </label>
+                </div>
+              )}
             </div>
           );
         })()}
