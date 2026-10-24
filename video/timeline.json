@@ -1,0 +1,81 @@
+{
+  "total_seconds": 153.864,
+  "scenes": [
+    {
+      "at": "0.1",
+      "caption": "SchoolSync AI: upload a school calendar PDF (synthetic, fictional school)"
+    },
+    {
+      "at": "5.9",
+      "caption": "Set school, academic year and timezone"
+    },
+    {
+      "at": "11.1",
+      "caption": "Legend read from the PDF itself: colours are matched to its labels,\nnothing is hard-coded (no 'red = holiday')"
+    },
+    {
+      "at": "21.7",
+      "caption": "One cell uses a colour that is NOT in the legend:\nflagged for review, not guessed"
+    },
+    {
+      "at": "29.4",
+      "caption": "Each event shows duration, category, source page and status;\nuncertainty is explicit, not a single score"
+    },
+    {
+      "at": "38.0",
+      "caption": "Half day with NO printed time: the app will not assume noon.\nConfirm is blocked"
+    },
+    {
+      "at": "48.6",
+      "caption": "You supply the dismissal time; the edit is logged in history"
+    },
+    {
+      "at": "54.5",
+      "caption": "Colour-only cell with no text: needs a title and duration from you"
+    },
+    {
+      "at": "63.2",
+      "caption": "Resolved by a person, with source evidence kept"
+    },
+    {
+      "at": "68.0",
+      "caption": "Month-calendar view of the same events"
+    },
+    {
+      "at": "75.7",
+      "caption": "Confirm the legend mapping before export or sync"
+    },
+    {
+      "at": "80.6",
+      "caption": "Import history: first import of this school and year"
+    },
+    {
+      "at": "86.7",
+      "caption": "ICS downloaded: all-day events are date values,\ntimed events carry a timezone, stable UIDs"
+    },
+    {
+      "at": "95.5",
+      "caption": "Preview: 8 creates, nothing written yet.\nSync needs your explicit confirmation of this exact plan"
+    },
+    {
+      "at": "106.1",
+      "caption": "Report: 8 created in the in-memory demo calendar\n(no real calendar is touched)"
+    },
+    {
+      "at": "113.8",
+      "caption": "Run it again: 8 skipped, 0 created.\nDuplicate-safe: already synced, unchanged"
+    },
+    {
+      "at": "124.4",
+      "caption": "Now upload the SAME PDF again"
+    },
+    {
+      "at": "129.3",
+      "caption": "Recognised: this exact PDF was imported before.\nNo new import record, no duplicates"
+    },
+    {
+      "at": "139.9",
+      "caption": "closing card"
+    }
+  ]
+}

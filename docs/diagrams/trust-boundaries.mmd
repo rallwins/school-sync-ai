@@ -1,0 +1,23 @@
+flowchart LR
+  subgraph Browser["Browser (untrusted client)"]
+    UI[Next.js UI - no secrets, sessionStorage only]
+  end
+  subgraph Vercel["Vercel (trusted server side)"]
+    PX["/api proxy route - holds BACKEND_API_KEY"]
+  end
+  subgraph AWS["AWS account (Lambda, us-east-1)"]
+    FU[Function URL - public, HTTPS]
+    API[FastAPI: key check, upload validation, readiness re-check]
+    DB[(SQLite in /tmp - ephemeral)]
+  end
+  subgraph Providers["Calendar providers"]
+    GG[Google Calendar API - OAuth 2.0 + PKCE, mocked-tested only]
+    MS[Microsoft Graph - not implemented]
+  end
+  UI -->|HTTPS, no key| PX
+  PX -->|HTTPS + X-API-Key| FU --> API
+  API --> DB
+  API -->|bearer token, only after explicit confirmation| GG
+  API -.->|planned| MS
+  classDef boundary stroke-dasharray: 4 3;
+  class Browser,Vercel,AWS,Providers boundary;

@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  SchoolSync AI demo backend on AWS Lambda (container image) with a public HTTPS Function URL.
+  No VPC, NAT, load balancer or always-on compute. Deploy in two steps: first without
+  ImageUri (creates only the ECR repository), push the image, then deploy again with ImageUri.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Default: ""
+    Description: ECR image URI (with tag). Leave empty on the first deploy.
+  ApiKey:
+    Type: String
+    NoEcho: true
+    MinLength: 24
+    Default: "unset-unset-unset-unset-unset"
+    Description: Shared secret the Vercel proxy sends as X-API-Key. Stored as a Lambda env var.
+  BudgetEmail:
+    Type: String
+    Default: ""
+    Description: Optional. If set, creates a $5/month cost budget that emails at 80% actual and 100% forecast.
+  MaxUploadBytes:
+    Type: Number
+    Default: 4000000
+    Description: Kept under Vercel's 4.5 MB function body limit.
+
+Conditions:
+  HasImage: !Not [!Equals [!Ref ImageUri, ""]]
+  HasBudgetEmail: !Not [!Equals [!Ref BudgetEmail, ""]]
+
+Resources:
+  Repository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Delete
+    Properties:
+      RepositoryName: schoolsync-backend
+      ImageScanningConfiguration: { ScanOnPush: true }
+      EncryptionConfiguration: { EncryptionType: AES256 }
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {"rules":[{"rulePriority":1,"description":"keep last 2 images","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":2},"action":{"type":"expire"}}]}
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: HasImage
+    Properties:
+      LogGroupName: /aws/lambda/schoolsync-backend
+      RetentionInDays: 14
+
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Condition: HasImage
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - { Effect: Allow, Principal: { Service: lambda.amazonaws.com }, Action: "sts:AssumeRole" }
+      Policies:
+        - PolicyName: logs-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ["logs:CreateLogStream", "logs:PutLogEvents"]
+                Resource: !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/schoolsync-backend:*"
+
+  Function:
+    Type: AWS::Lambda::Function
+    Condition: HasImage
+    DependsOn: LogGroup
+    Properties:
+      FunctionName: schoolsync-backend
+      PackageType: Image
+      Code: { ImageUri: !Ref ImageUri }
+      Role: !GetAtt FunctionRole.Arn
+      MemorySize: 1024
+      Timeout: 30
+      Architectures: [x86_64]
+      Environment:
+        Variables:
+          SCHOOLSYNC_API_KEY: !Ref ApiKey
+          SCHOOLSYNC_MAX_UPLOAD_BYTES: !Ref MaxUploadBytes
+
+  FunctionUrl:
+    Type: AWS::Lambda::Url
+    Condition: HasImage
+    Properties:
+      TargetFunctionArn: !GetAtt Function.Arn
+      AuthType: NONE # public URL; every /api call is gated by the X-API-Key header in the app
+
+  UrlInvokePermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasImage
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  UrlInvokeFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasImage
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+  CostBudget:
+    Type: AWS::Budgets::Budget
+    Condition: HasBudgetEmail
+    Properties:
+      Budget:
+        BudgetName: schoolsync-demo-monthly
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: { Amount: 5, Unit: USD }
+      NotificationsWithSubscribers:
+        - Notification: { NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 80, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
+        - Notification: { NotificationType: FORECASTED, ComparisonOperator: GREATER_THAN, Threshold: 100, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
+
+Outputs:
+  RepositoryUri:
+    Value: !GetAtt Repository.RepositoryUri
+  FunctionUrl:
+    Condition: HasImage
+    Value: !GetAtt FunctionUrl.FunctionUrl

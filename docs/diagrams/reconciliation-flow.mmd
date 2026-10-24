@@ -1,0 +1,17 @@
+flowchart TD
+  E[Event, fingerprint recomputed] --> R{Ready? confirmed or user-confirmed, no blockers}
+  R -->|no| S0[skip: needs review]
+  R -->|yes| A{Provider event with our owner id?}
+  A -->|yes, same fingerprint| S1[skip: already synced]
+  A -->|yes, different fingerprint| U[update owned event]
+  A -->|no| M{Manifest row exists?}
+  M -->|yes| C0[conflict: deleted in destination, not recreated]
+  M -->|no| B{Identical event, not ours?}
+  B -->|yes| S2[skip: leave untouched]
+  B -->|no| F{Similar title + overlapping dates?}
+  F -->|yes| C1[conflict: human decides]
+  F -->|no| CR[create]
+  CR --> X[Executor: find by owner id first]
+  X -->|found| AD[adopt into manifest, no create]
+  X -->|not found| CALL[create; on timeout retry after re-checking owner id]
+  MR[Manifest ids missing from source] --> PR[propose_remove: never executed automatically]

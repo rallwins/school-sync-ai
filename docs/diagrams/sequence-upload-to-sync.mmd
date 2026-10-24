@@ -1,0 +1,34 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant W as Web UI (Next.js)
+  participant P as Vercel /api proxy
+  participant A as API (FastAPI)
+  participant S as SQLite store
+  participant G as Calendar provider (mock / Google)
+
+  U->>W: choose PDF, school, year, timezone
+  W->>P: POST /api/uploads/extract
+  P->>A: same request + X-API-Key
+  A->>A: validate (magic bytes, size, pages, encryption)
+  A->>A: PyMuPDF words + vector fills
+  A->>A: grid -> dates, legend parse, colour match (Delta E), classify
+  A-->>W: events + legend + warnings + per-event evidence
+  W->>A: POST /api/imports (record import)
+  A->>S: save import, diff vs previous import of same school/year
+  A-->>W: already_imported? / added / removed / changed
+  U->>W: review, edit, confirm ambiguous events, confirm legend
+  U->>W: Download ICS / CSV (server re-checks readiness)
+  U->>W: Preview sync
+  W->>A: POST /api/sync/preview
+  A->>G: list events in date range (all pages)
+  A->>S: load manifest
+  A-->>W: plan (create/update/skip/conflict/propose_remove) + plan_token
+  U->>W: tick confirmation, Confirm and sync
+  W->>A: POST /api/sync/execute (confirm=true, plan_token)
+  A->>A: recompute plan; token must match, else 409
+  loop each create/update
+    A->>G: find by owner id, then create/update (bounded retries)
+    A->>S: upsert mapping (stable id -> provider id, batch)
+  end
+  A-->>W: report (created/updated/adopted/skipped/failed)

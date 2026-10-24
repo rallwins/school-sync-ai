@@ -1,0 +1,24 @@
+flowchart TD
+  L[Layout: words + vector fills per page] --> SW[Find swatches: small square fills with a label to the right]
+  SW --> LG[Legend entries: label, RGB, page region]
+  L --> GR[Find 'Month YYYY' header + 7 weekday labels]
+  GR --> CE[Cell rectangles: modal size filled rects]
+  CE --> DT[Date = week start + row/col; check printed day number]
+  DT -->|mismatch| WARN[Report grid_misaligned; skip cell; never shift date]
+  DT -->|match| CS[Cell colour + cell text]
+  CS --> BL{Blank / white?}
+  BL -->|yes| NC[No colour evidence]
+  BL -->|no| M[CIE76 Delta E to every legend colour]
+  LG --> M
+  M -->|best <= tolerance| MT[Matched entry; ambiguous if runner-up within 3 dE]
+  M -->|none within tolerance| UM[Unlisted colour]
+  MT --> CL[Classify: text rules vs legend wording]
+  NC --> CL
+  UM --> CL
+  CL -->|text and legend agree| OK[confirmed]
+  CL -->|only one source explicit| OK2[confirmed / inferred]
+  CL -->|text contradicts legend| AM[ambiguous + critical warning]
+  CL -->|half day, no printed time| NR[needs_review: no assumed time]
+  CL -->|colour only, no text or no legend match| AM2[ambiguous / needs_review: untitled placeholder]
+  OK --> MG[Merge consecutive same-colour days into one event]
+  OK2 --> MG
