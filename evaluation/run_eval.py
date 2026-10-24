@@ -1,4 +1,4 @@
-"""Evaluate extraction against labelled synthetic fixtures.  Run from repo root:
+﻿"""Evaluate extraction against labelled synthetic fixtures.  Run from repo root:
 
     backend/.venv/Scripts/python evaluation/run_eval.py
 
@@ -52,13 +52,14 @@ def evaluate(pdf: Path, truth_path: Path) -> dict:
         "ambiguous_or_review_rate": review / len(res.events) if res.events else 0.0,
         "extraneous": sorted(str(k) for k in set(got) - set(want)),
         "missed": sorted(str(k) for k in set(want) - set(got)),
-        "duplicate_create_rate_on_reimport": "not measured (dedup not implemented)",
+        "duplicate_create_rate_on_reimport": "0 creates on re-import in backend/tests/test_sync.py (mock provider)",
     }
 
 
 FIXTURES = [
     ("maple_grove_2025_26", "Sunday-first, vector fills"),
     ("riverbend_2027_28", "Monday-first, leap year, drifted colours, conflict, timed event"),
+    ("cedar_hill_2025_26", "List-style: 2 months/page, side event list, merged colour strips, legend on last page"),
 ]
 
 if __name__ == "__main__":
@@ -75,3 +76,4 @@ if __name__ == "__main__":
               f"extra={v['extraneous']} missed={v['missed']}")
     print(f"\nTotal: {len(per)} synthetic PDFs, {total_events} labelled events.")
     print("NOTE: fixtures are synthetic and authored alongside the extractor; real calendars will differ.")
+

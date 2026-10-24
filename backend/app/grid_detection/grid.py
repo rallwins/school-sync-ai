@@ -68,24 +68,46 @@ def find_month_year(page: PageLayout) -> tuple[int, int]:
     raise GridError("no 'Month YYYY' header found")
 
 
+def weekday_header_runs(page: PageLayout) -> list[list[TextSpan]]:
+    """Every row holding 7 consecutive weekday labels, top to bottom (one per month grid).
+
+    Looking for a *run* of 7 consecutive names (Mon Tu We ...) rather than counting labels per
+    row ignores stray words such as 'Sat' or 'Th' that appear in ordinary text.
+    """
+    cands = sorted(
+        (w for w in page.spans if w.text.lower().rstrip(".") in WEEKDAYS),
+        key=lambda w: (w.y0, w.x0),
+    )
+    rows: list[list[TextSpan]] = []
+    for w in cands:
+        for r in rows:
+            if abs(r[0].y0 - w.y0) < 3:
+                r.append(w)
+                break
+        else:
+            rows.append([w])
+    runs: list[list[TextSpan]] = []
+    for r in rows:
+        r.sort(key=lambda w: w.x0)
+        for k in range(len(r) - 6):
+            win = r[k : k + 7]
+            idx = [WEEKDAYS[w.text.lower().rstrip(".")] for w in win]
+            if all((a + 1) % 7 == b for a, b in itertools.pairwise(idx)) and all(
+                b.x0 - a.x1 < 200 for a, b in itertools.pairwise(win)
+            ):
+                runs.append(win)
+                break
+    return sorted(runs, key=lambda run: run[0].y0)
+
+
 def _weekday_columns(page: PageLayout) -> list[tuple[float, int]]:
     """Return [(x_center, weekday_index)] for the header row, left to right."""
-    cands = [w for w in page.spans if w.text.lower().rstrip(".") in WEEKDAYS]
-    rows: dict[int, list[TextSpan]] = {}
-    for w in cands:
-        rows.setdefault(round(w.y0 / 3), []).append(w)
-    full = [r for r in rows.values() if len(r) == 7]
-    if len(full) > 1:
-        raise GridError(f"{len(full)} month grids on one page; multi-month pages are not supported")
-    best = max(rows.values(), key=len, default=[])
-    if len(best) != 7:
-        raise GridError(f"weekday header row not found (saw {len(best)} labels)")
-    best.sort(key=lambda w: w.x0)
-    cols = [(_center(w)[0], WEEKDAYS[w.text.lower().rstrip(".")]) for w in best]
-    for (_, a), (_, b) in itertools.pairwise(cols):
-        if (a + 1) % 7 != b:
-            raise GridError("weekday header labels are not consecutive")
-    return cols
+    runs = weekday_header_runs(page)
+    if len(runs) > 1:
+        raise GridError(f"{len(runs)} month grids on one page; multi-month pages are not supported")
+    if not runs:
+        raise GridError("weekday header row not found")
+    return [(_center(w)[0], WEEKDAYS[w.text.lower().rstrip(".")]) for w in runs[0]]
 
 
 def _cell_rects(page: PageLayout, header_bottom: float) -> list[FillRect]:

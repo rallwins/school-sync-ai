@@ -35,10 +35,28 @@
       "extraneous": [],
       "missed": [],
       "duplicate_create_rate_on_reimport": "not measured (dedup not implemented)"
+    },
+    "cedar_hill_2025_26": {
+      "description": "List-style: 2 months/page, side event list, merged colour strips, legend on last page",
+      "dataset": {
+        "pdfs": 1,
+        "pages": 3,
+        "labelled_events": 13
+      },
+      "precision": 1.0,
+      "recall": 1.0,
+      "category_accuracy": 1.0,
+      "duration_kind_accuracy": 1.0,
+      "status_accuracy": 1.0,
+      "source_evidence_completeness": 1.0,
+      "ambiguous_or_review_rate": 0.8461538461538461,
+      "extraneous": [],
+      "missed": [],
+      "duplicate_create_rate_on_reimport": "not measured (dedup not implemented)"
     }
   },
   "dataset_total": {
-    "pdfs": 2,
-    "labelled_events": 13
+    "pdfs": 3,
+    "labelled_events": 26
   }
 }

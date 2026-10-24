@@ -16,7 +16,8 @@ HALF_RE = re.compile(
     re.IGNORECASE,
 )
 ALLDAY_RE = re.compile(
-    r"\b(no\s+school|no\s+students|school\s+closed|closed|holiday|break|recess|day\s+off)\b",
+    r"\b(no\s+school|no\s+students|school\s+closed|closed|closures?|holidays?|breaks?|"
+    r"recess(?:es)?|days?\s+off)\b",
     re.IGNORECASE,
 )
 TIME_RE = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\b\.?", re.IGNORECASE)
@@ -66,6 +67,7 @@ def classify(
     color_present: bool,
     color_matched: bool,
     color_ambiguous: bool = False,
+    legend_inferred_only: bool = False,
 ) -> Classification:
     w: list[EventWarning] = []
     text_kind = kind_from_text(text) if text else None
@@ -103,6 +105,7 @@ def classify(
         return Classification(DurationKind.UNKNOWN, ValidationStatus.AMBIGUOUS, title, warnings=w)
 
     kind = text_kind or legend_kind
+    from_legend_only = text_kind is None and legend_kind is not None
     explicit_text = text_kind is not None
     status = ValidationStatus.CONFIRMED
     if color_present and not color_matched:
@@ -116,6 +119,16 @@ def classify(
         status = ValidationStatus.INFERRED if explicit_text else ValidationStatus.AMBIGUOUS
     if color_ambiguous and status == ValidationStatus.CONFIRMED:
         status = ValidationStatus.NEEDS_REVIEW
+
+    if legend_inferred_only and from_legend_only and status == ValidationStatus.CONFIRMED:
+        # Duration comes from the legend wording alone (no explicit text): say so.
+        status = ValidationStatus.INFERRED
+        w.append(
+            EventWarning(
+                code="kind_from_colour_only",
+                message=f"Duration inferred from legend colour '{legend_label}' only.",
+            )
+        )
 
     if kind == DurationKind.HALF_DAY:
         if t is None:

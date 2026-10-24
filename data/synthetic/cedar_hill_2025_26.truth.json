@@ -1,0 +1,159 @@
+{
+  "school": "Cedar Hill School",
+  "academic_year": "2025-2026",
+  "timezone": "Asia/Kolkata",
+  "layout": "list-style, two months per page",
+  "events": [
+    {
+      "title": "Book Fair",
+      "start": "2025-09-08",
+      "end": "2025-09-12",
+      "duration_kind": "unknown",
+      "status": "needs_review",
+      "category": "Important Days",
+      "page": 2
+    },
+    {
+      "title": "Parent Workshops",
+      "start": "2025-09-18",
+      "end": "2025-09-19",
+      "duration_kind": "unknown",
+      "status": "needs_review",
+      "category": "Important Days",
+      "page": 2
+    },
+    {
+      "title": "Open House",
+      "start": "2025-09-26",
+      "end": "2025-09-26",
+      "duration_kind": "timed",
+      "status": "confirmed",
+      "category": "Important Days",
+      "page": 2
+    },
+    {
+      "title": "Founders Day",
+      "start": "2025-09-01",
+      "end": "2025-09-01",
+      "duration_kind": "all_day",
+      "status": "inferred",
+      "category": "Public Holidays",
+      "page": 2
+    },
+    {
+      "title": "Teachers Day",
+      "start": "2025-09-05",
+      "end": "2025-09-05",
+      "duration_kind": "all_day",
+      "status": "inferred",
+      "category": "Public Holidays",
+      "page": 2
+    },
+    {
+      "title": "School Reopens",
+      "start": "2025-10-06",
+      "end": "2025-10-06",
+      "duration_kind": "unknown",
+      "status": "needs_review",
+      "category": "School Opening & Reopening Days",
+      "page": 2
+    },
+    {
+      "title": "Field Trip",
+      "start": "2025-10-27",
+      "end": "2025-10-31",
+      "duration_kind": "unknown",
+      "status": "needs_review",
+      "category": "Important Days",
+      "page": 2
+    },
+    {
+      "title": "Gandhi Jayanti",
+      "start": "2025-10-02",
+      "end": "2025-10-02",
+      "duration_kind": "all_day",
+      "status": "inferred",
+      "category": "Public Holidays",
+      "page": 2
+    },
+    {
+      "title": "Diwali Festival of Lights Holiday",
+      "start": "2025-10-20",
+      "end": "2025-10-21",
+      "duration_kind": "all_day",
+      "status": "confirmed",
+      "category": "Public Holidays",
+      "page": 2
+    },
+    {
+      "title": "School Closes for Learners",
+      "start": "2025-12-22",
+      "end": "2025-12-22",
+      "duration_kind": "unknown",
+      "status": "needs_review",
+      "category": "School Opening & Reopening Days",
+      "page": 3
+    },
+    {
+      "title": "Christmas",
+      "start": "2025-12-25",
+      "end": "2025-12-25",
+      "duration_kind": "all_day",
+      "status": "inferred",
+      "category": "Public Holidays",
+      "page": 3
+    },
+    {
+      "title": "School Reopens for Learners",
+      "start": "2026-01-05",
+      "end": "2026-01-05",
+      "duration_kind": "unknown",
+      "status": "needs_review",
+      "category": "School Opening & Reopening Days",
+      "page": 3
+    },
+    {
+      "title": "Republic Day",
+      "start": "2026-01-26",
+      "end": "2026-01-26",
+      "duration_kind": "all_day",
+      "status": "inferred",
+      "category": "Public Holidays",
+      "page": 3
+    }
+  ],
+  "legend": {
+    "Student Days": {
+      "label": "Student Days",
+      "rgb255": [
+        255,
+        249,
+        233
+      ]
+    },
+    "Public Holidays": {
+      "label": "Public Holidays",
+      "rgb255": [
+        158,
+        209,
+        216
+      ]
+    },
+    "School Opening & Reopening Days": {
+      "label": "School Opening & Reopening Days",
+      "rgb255": [
+        222,
+        159,
+        16
+      ]
+    },
+    "Important Days": {
+      "label": "Important Days",
+      "rgb255": [
+        240,
+        156,
+        86
+      ]
+    }
+  }
+}
