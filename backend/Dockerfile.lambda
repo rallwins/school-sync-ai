@@ -1,0 +1,18 @@
+# AWS Lambda container image. Runs the unchanged FastAPI app via the Lambda Web Adapter,
+# which translates Function URL requests to plain HTTP on :8000.
+# Build: docker build --provenance=false -f Dockerfile.lambda -t schoolsync-lambda .
+# (Lambda rejects OCI indexes with attestations, hence --provenance=false.)
+FROM python:3.12-slim
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --retries 8 --timeout 60 -r requirements.txt
+COPY app ./app
+COPY migrations ./migrations
+# Lambda's filesystem is read-only except /tmp. State is therefore per warm instance and
+# ephemeral: fine for a synthetic-data demo, NOT for real import history.
+ENV SCHOOLSYNC_DATA_DIR=/tmp/data \
+    AWS_LWA_PORT=8000 \
+    AWS_LWA_READINESS_CHECK_PATH=/health \
+    PORT=8000
+CMD ["python", "-m", "uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

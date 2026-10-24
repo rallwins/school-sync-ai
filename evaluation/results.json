@@ -1,0 +1,44 @@
+{
+  "fixtures": {
+    "maple_grove_2025_26": {
+      "description": "Sunday-first, vector fills",
+      "dataset": {
+        "pdfs": 1,
+        "pages": 4,
+        "labelled_events": 8
+      },
+      "precision": 1.0,
+      "recall": 1.0,
+      "category_accuracy": 1.0,
+      "duration_kind_accuracy": 1.0,
+      "status_accuracy": 1.0,
+      "source_evidence_completeness": 1.0,
+      "ambiguous_or_review_rate": 0.25,
+      "extraneous": [],
+      "missed": [],
+      "duplicate_create_rate_on_reimport": "not measured (dedup not implemented)"
+    },
+    "riverbend_2027_28": {
+      "description": "Monday-first, leap year, drifted colours, conflict, timed event",
+      "dataset": {
+        "pdfs": 1,
+        "pages": 2,
+        "labelled_events": 5
+      },
+      "precision": 1.0,
+      "recall": 1.0,
+      "category_accuracy": 1.0,
+      "duration_kind_accuracy": 1.0,
+      "status_accuracy": 1.0,
+      "source_evidence_completeness": 1.0,
+      "ambiguous_or_review_rate": 0.2,
+      "extraneous": [],
+      "missed": [],
+      "duplicate_create_rate_on_reimport": "not measured (dedup not implemented)"
+    }
+  },
+  "dataset_total": {
+    "pdfs": 2,
+    "labelled_events": 13
+  }
+}

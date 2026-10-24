@@ -1,0 +1,117 @@
+{
+  "school": "Maple Grove Academy",
+  "academic_year": "2025-2026",
+  "timezone": "America/Chicago",
+  "week_starts_on": "sunday",
+  "legend": {
+    "holiday": {
+      "label": "Holiday / No School",
+      "rgb255": [
+        244,
+        182,
+        182
+      ]
+    },
+    "half_day": {
+      "label": "Half Day (Early Dismissal)",
+      "rgb255": [
+        255,
+        224,
+        138
+      ]
+    },
+    "pd_day": {
+      "label": "Teacher Work Day - No Students",
+      "rgb255": [
+        183,
+        215,
+        244
+      ]
+    },
+    "break": {
+      "label": "School Break",
+      "rgb255": [
+        205,
+        232,
+        192
+      ]
+    }
+  },
+  "events": [
+    {
+      "title": "Labor Day",
+      "start": "2025-09-01",
+      "end": "2025-09-01",
+      "category": "holiday",
+      "duration_kind": "all_day",
+      "page": 1,
+      "status": "confirmed"
+    },
+    {
+      "title": "Early Dismissal",
+      "start": "2025-09-26",
+      "end": "2025-09-26",
+      "category": "half_day",
+      "duration_kind": "half_day",
+      "end_time": "12:30",
+      "page": 1,
+      "status": "confirmed"
+    },
+    {
+      "title": "Teacher Work Day",
+      "start": "2025-10-13",
+      "end": "2025-10-13",
+      "category": "pd_day",
+      "duration_kind": "all_day",
+      "page": 2,
+      "status": "confirmed"
+    },
+    {
+      "title": "Half Day",
+      "start": "2025-10-17",
+      "end": "2025-10-17",
+      "category": "half_day",
+      "duration_kind": "half_day",
+      "end_time": null,
+      "page": 2,
+      "status": "needs_review"
+    },
+    {
+      "title": null,
+      "start": "2025-10-31",
+      "end": "2025-10-31",
+      "category": null,
+      "duration_kind": "unknown",
+      "page": 2,
+      "status": "ambiguous"
+    },
+    {
+      "title": "Winter Break",
+      "start": "2025-12-22",
+      "end": "2025-12-31",
+      "category": "break",
+      "duration_kind": "all_day",
+      "page": 3,
+      "status": "confirmed"
+    },
+    {
+      "title": "Winter Break",
+      "start": "2026-01-01",
+      "end": "2026-01-01",
+      "category": "break",
+      "duration_kind": "all_day",
+      "page": 4,
+      "status": "confirmed",
+      "note": "continuation of the Dec 22-31 block; merge into 2025-12-22..2026-01-01 in review"
+    },
+    {
+      "title": "MLK Day",
+      "start": "2026-01-19",
+      "end": "2026-01-19",
+      "category": "holiday",
+      "duration_kind": "all_day",
+      "page": 4,
+      "status": "confirmed"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "school": "Riverbend Elementary",
+  "academic_year": "2027-2028",
+  "timezone": "America/New_York",
+  "week_starts_on": "monday",
+  "legend": {
+    "early": {
+      "label": "Early Release Day",
+      "rgb255": [
+        250,
+        200,
+        200
+      ]
+    },
+    "closed": {
+      "label": "Closed - No Classes",
+      "rgb255": [
+        255,
+        235,
+        160
+      ]
+    },
+    "recess": {
+      "label": "Vacation / Recess",
+      "rgb255": [
+        190,
+        215,
+        250
+      ]
+    }
+  },
+  "events": [
+    {
+      "title": "Leap Day",
+      "start": "2028-02-29",
+      "end": "2028-02-29",
+      "category": "closed",
+      "duration_kind": "all_day",
+      "status": "confirmed"
+    },
+    {
+      "title": "Early Release",
+      "start": "2028-03-10",
+      "end": "2028-03-10",
+      "category": "early",
+      "duration_kind": "half_day",
+      "end_time": "13:15",
+      "status": "confirmed"
+    },
+    {
+      "title": "Parent Conferences",
+      "start": "2028-03-14",
+      "end": "2028-03-14",
+      "category": null,
+      "duration_kind": "timed",
+      "start_time": "16:00",
+      "status": "confirmed"
+    },
+    {
+      "title": "Early Release",
+      "start": "2028-03-21",
+      "end": "2028-03-21",
+      "category": "closed",
+      "duration_kind": "unknown",
+      "status": "ambiguous",
+      "note": "text says early release, legend colour says closed: must be flagged"
+    },
+    {
+      "title": "Spring Recess",
+      "start": "2028-03-27",
+      "end": "2028-03-31",
+      "category": "recess",
+      "duration_kind": "all_day",
+      "status": "confirmed"
+    }
+  ]
+}
