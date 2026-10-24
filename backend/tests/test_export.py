@@ -50,7 +50,7 @@ def test_half_day_with_user_profile_is_timed_with_tzid(events):
     data = build_ics(events, day_start=time(8, 0), now=NOW)
     ev = parse(data)["Early Dismissal"]
     assert ev["dtstart"].dt.hour == 8 and ev["dtend"].dt.hour == 12 and ev["dtend"].dt.minute == 30
-    assert ev["dtstart"].dt.tzinfo.key == "America/Chicago"
+    assert str(ev["dtstart"].dt.tzinfo) == "America/Chicago"
     assert b"BEGIN:VTIMEZONE" in data and b"TZID:America/Chicago" in data
     assert "user-supplied" in str(ev["description"])
 
